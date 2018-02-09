@@ -732,9 +732,6 @@ class BoxDataEntryArea:
   def set_editable_all(self,is_editable):
     self.entry_name.set_editable(is_editable)
     self.entry_sampletext.set_editable(is_editable)
-#    self.entry_valign.set_editable(is_editable)
-#    self.entry_halign.set_editable(is_editable)
-#    self.entry_type.set_editable(is_editable)
     self.entry_page.set_editable(is_editable)
     self.entry_x1.set_editable(is_editable)
     self.entry_x2.set_editable(is_editable)
@@ -964,6 +961,7 @@ class LayoutOverBoxes(gtk.Layout):
       y1=self.projectdata.get_grid_coordinate_by_id(box.y_1)
       y2=self.projectdata.get_grid_coordinate_by_id(box.y_2)
       height=y2-y1
+      print box.x_1,x1,box.x_2,x2,box.y_1,y1,box.y_2,y2
       ctx.move_to(x1, y1)                      
       ctx.rel_line_to(width, 0)       
       ctx.rel_line_to(0, height)      
@@ -1185,6 +1183,7 @@ class BarOnLayout(gtk.EventBox):
 
   def move_to_value_of_spinbutton(self,widget):
     self.move_to_value(get_int_from_spinbutton(self.spinbutton))
+#    self.parent.refresh_preview()
 
   def move_to_value(self,v):
     if self.draging:
@@ -1237,6 +1236,8 @@ class BarOnLayout(gtk.EventBox):
       self.spinbutton.set_value(self.y)
     self.parent.move(self,self.x,y)
     self.parent.move(self.label, self.x+self.margin, y+self.LINEWIDTH)
+
+      
   def move_horizontal(self,x):
     if self.direction & self.MASK_OPPOSIT_DIRECTION and self.direction & self.MASK_VIRTICAL_BAR:
       self.x=int(x)
@@ -1249,6 +1250,8 @@ class BarOnLayout(gtk.EventBox):
       self.spinbutton.set_value(self.x)
     self.parent.move(self, x, self.y)
     self.parent.move(self.label, x+self.LINEWIDTH, self.y+self.margin)
+
+
   def button_press_event(self,widget, event):
     self.spinbutton.set_current_bar(self)
     if event.button == 1:
@@ -1288,7 +1291,15 @@ class BarOnLayout(gtk.EventBox):
     self.margin_x = 0
     self.margin_y = 0
     self.draging=False
+    if self.direction & self.MASK_VIRTICAL_BAR:
+      self.griddata.value=self.x
+    else:
+      self.griddata.value=self.y
+
+    self.parent.refresh_preview()
     return True
+  
+
 
   def motion_notify_event(self,widget, event):
     if not self.draging:
@@ -1573,11 +1584,13 @@ class LayoutOverBoxesWithHoganArea:
     w=self.projectdata.lwidth
     g=GridData(0,w//2,False)
     bar=self.add_ruler(g)
+    self.projectdata.add_grid(g)
     
   def add_new_y_ruler_onclick(self,widget):
     h=self.projectdata.lheight
     g=GridData(0,h//2,True)
     bar=self.add_ruler(g)
+    self.projectdata.add_grid(g)
 
     
   
@@ -1653,7 +1666,7 @@ class ProjectData:
     self.boxes.append(boxdata)
 
   def add_grid(self,grid_data):
-    self.grids_h.append(grid_data)
+    self.grids.append(grid_data)
 
   def get_griddata_by_id(self,id):
     for griddata in self.grids:
@@ -1664,9 +1677,8 @@ class ProjectData:
   def get_grid_coordinate_by_id(self,id):
     g=self.get_griddata_by_id(id)
     if g==None:
-      return 0
-    
-    return griddata.value
+      return 0    
+    return g.value
 
 
   def pop_boxdata_by_id(self,id):
