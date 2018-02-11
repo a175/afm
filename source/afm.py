@@ -30,15 +30,14 @@ def int2alphabet(n):
 
 #####################################################
 class applicationFormData:
-
   def create_bgimage_file(self,pdffullpath,destzip,rootdir):    
     destzip.write(pdffullpath,os.path.join(rootdir,self.pdffilename()))
 
-  def __init__(self,listOfBoxData,pdf_filename,boundingboxes):
+  def __init__(self,projectdata):
+    self.projectdata=projectdata    
     self.UNITLENGTH=1.0
     self.XMARGIN=1.0
     self.YMARGIN=1.0
-
     self.PREFIX_ENVAT=""
     self.SUFFIX_ENVAT="@env@nu"
     self.PREFIX_COMAT=""
@@ -47,28 +46,11 @@ class applicationFormData:
     self.SUFFIX_BASEAT="@@nu"    
     self.PREFIX_ROUNDRECTANGLEAT=""
     self.SUFFIX_ROUNDRECTANGLEAT="@roundrectangle@nu"
-
-    self.bgfilename=pdf_filename
-    n_page=0
-    for boxdata in listOfBoxData:
-      if n_page < boxdata.page+1:
-        n_page=boxdata.page+1
-
-    self.boundingboxes=[]
-    page=[]
-    for i in range(n_page):
-      (ltx,lty,rbx,rby)=boundingboxes[i]
-      self.boundingboxes.append((int(ltx),int(lty),int(rbx),int(rby)))
-      p=[]
-      page.append(p)
-      for boxdata in listOfBoxData:
-        if boxdata.page==i:
-          p.append(boxdata)
-    self.page=page
+    self.bgfilename=self.projectdata.bgimagepath
 
   def get_boundingboxstring(self,n):
-    (ltx,lty,rbx,rby)=self.boundingboxes[n]
-    r=str(ltx)+' '+str(lty)+' '+str(rbx)+' '+str(rby)
+    (ltx,lty,rbx,rby)=self.projectdata.boundingboxes[n]
+    r=str(int(ltx))+' '+str(int(lty))+' '+str(int(rbx))+' '+str(int(rby))
     return r
 
   def dtppt2texpt(self,dtp_pt):
@@ -86,7 +68,8 @@ class applicationFormData:
   def roundrectangleATname(self,name):
     return "\\"+self.PREFIX_BASEAT+name+self.SUFFIX_ROUNDRECTANGLEAT    
   def env_minipage(self,boxdata):
-    width=self.dtppt2unitlength_as_str(boxdata.width)
+    (x1,x2,w,y1,y2,h)=self.projectdata.get_box_coordinate(boxdata)
+    width=self.dtppt2unitlength_as_str(w)
     begin_minipage=r'\begin{minipage}[c]{'+width+r'\unitlength}'
     end_minipage=r'\end{minipage}'
     if boxdata.halign==BoxData.HALIGN_RIGHT:
@@ -134,6 +117,7 @@ class applicationFormData:
       r=r + boxdata.name
     return r
   def formfrontenddef(self,boxdata):
+    (x1,x2,w,y1,y2,h)=self.projectdata.get_box_coordinate(boxdata)
     r=""
     if boxdata.type!=BoxData.TYPE_ENVIRONMENT:
       r=r+"% "
@@ -174,17 +158,17 @@ class applicationFormData:
     r=r +r'}{'
     r=r + self.comATname(boxdata.name)
     r=r +r'{\rule{'
-    r=r + self.dtppt2unitlength_as_str(boxdata.width)
+    r=r + self.dtppt2unitlength_as_str(w)
     r=r +r'\unitlength}{'
-    r=r + self.dtppt2unitlength_as_str(boxdata.height/6)
+    r=r + self.dtppt2unitlength_as_str(h/6)
     r=r +r'\unitlength}\kern -'
-    r=r + self.dtppt2unitlength_as_str(boxdata.width)
+    r=r + self.dtppt2unitlength_as_str(w)
     r=r +r'\unitlength\rule['
-    r=r + self.dtppt2unitlength_as_str(5*boxdata.height/6)
+    r=r + self.dtppt2unitlength_as_str(5*h/6)
     r=r +r'\unitlength]{'
-    r=r + self.dtppt2unitlength_as_str(boxdata.width)
+    r=r + self.dtppt2unitlength_as_str(w)
     r=r +r'\unitlength}{'
-    r=r + self.dtppt2unitlength_as_str(boxdata.height/6)
+    r=r + self.dtppt2unitlength_as_str(h/6)
     r=r +r'\unitlength}}'
     r=r +r'}'
 
@@ -198,9 +182,9 @@ class applicationFormData:
     r=r +r'}{'
     r=r + self.comATname(boxdata.name)
     r=r +r'{\rule{'
-    r=r + self.dtppt2unitlength_as_str(boxdata.width)
+    r=r + self.dtppt2unitlength_as_str(w)
     r=r +r'\unitlength}{'
-    r=r + self.dtppt2unitlength_as_str(boxdata.height)
+    r=r + self.dtppt2unitlength_as_str(h)
     r=r +r'\unitlength}}}'
 
 
@@ -219,13 +203,14 @@ class applicationFormData:
 
 
   def formdef(self,boxdata):
-    x=self.dtppt2unitlength_as_str(boxdata.x-self.XMARGIN)
+    (x1,x2,w,y1,y2,h)=self.projectdata.get_box_coordinate(boxdata)
+    x=self.dtppt2unitlength_as_str(x1-self.XMARGIN)
     if boxdata.valign==BoxData.VALIGN_BOTTOM:
-      y=-boxdata.y-boxdata.height
+      y=-y2
     elif boxdata.valign==BoxData.VALIGN_CENTER:
-      y=-boxdata.y-0.5*boxdata.height
+      y=-y1-0.5*h
     else:
-      y=-boxdata.y
+      y=-y1
     y=self.dtppt2unitlength_as_str(y+self.YMARGIN)
 
 
@@ -268,17 +253,15 @@ class applicationFormData:
     r=r +r'{{#1}}}}'
     new_base_at=r
 
-
-
     put_roundrectangle_at=self.roundrectangleATname(boxdata.name)
-    midx=self.dtppt2unitlength_as_str(boxdata.x+0.5*boxdata.width-self.XMARGIN)
-    midy=self.dtppt2unitlength_as_str(-boxdata.y-0.5*boxdata.height+self.YMARGIN)
-    round_R=min(boxdata.width,boxdata.height)
+    midx=self.dtppt2unitlength_as_str(x1+0.5*w-self.XMARGIN)
+    midy=self.dtppt2unitlength_as_str(-y1-0.5*h+self.YMARGIN)
+    round_R=min(w,h)
     if round_R >20:
       round_R=20
     round_r=int(0.5*round_R)
-    round_wr=int(0.5*boxdata.width)
-    round_hr=int(0.5*boxdata.height)
+    round_wr=int(0.5*w)
+    round_hr=int(0.5*h)
     round_w=round_wr-round_r
     round_h=round_hr-round_r
 
@@ -295,7 +278,6 @@ class applicationFormData:
     else:
       r=r +r'\roundCorners@nu['
       r=r + self.dtppt2unitlength_as_str(round_r*2)
-
       r=r +r']{'
       r=r + self.dtppt2unitlength_as_str(round_w)
       r=r +r'}{'
@@ -312,8 +294,6 @@ class applicationFormData:
       r=r +r'}'
     r=r +r'}}'
     new_roundrectangle_at=r
-
-
     return (new_env_at,new_com_at,new_base_at,new_roundrectangle_at)
 
 
@@ -328,7 +308,8 @@ class applicationFormData:
   def pagename_pdf(self,n):
     return self.pagename_frontend(n)+"**"
   def pdffilename(self):
-    return self.bgfilename
+    return self.projectdata.bgimagepath
+
   def pagedef(self,n):
     r=""
     r=r +r'\newenvironment{'
@@ -430,14 +411,16 @@ class applicationFormData:
     form_front=""
     form_back=""
 
-    for i,pagei in enumerate(self.page):
+
+    for i in self.projectdata.get_pages_with_boxdata():
       (fr,no,pdf)=self.pagedef(i)
       page_def=page_def+"\n"+fr+"\n"+no+"\n"+pdf+"\n\n"
       page_atfirst=page_atfirst+"\n"+self.def_page_atfirst(i)
       form_front=form_front+"\n% page "+str(i+1)+" i.e.," +int2alphabet(i)
-      for boxdata in pagei:
+      for boxdata in self.projectdata.x_boxdata_in_the_page(i):
         form_back=form_back+"\n\n"+("\n".join(self.formdef(boxdata)))
         form_front=form_front+"\n\n"+self.formfrontenddef(boxdata)
+
     r=r+"%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     r=r+page_atfirst
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
@@ -749,10 +732,10 @@ class BoxDataEntryArea:
     self.boxdata.hilight=False
 
     self.boxdata.page=get_int_from_spinbutton(self.entry_page)
-    self.boxdata.x1=str(get_int_from_spinbutton(self.entry_x1))
-    self.boxdata.x2=str(get_int_from_spinbutton(self.entry_x2))
-    self.boxdata.y1=str(get_int_from_spinbutton(self.entry_y1))
-    self.boxdata.y2=str(get_int_from_spinbutton(self.entry_y2))
+    self.boxdata.x_1=get_int_from_spinbutton(self.entry_x1)
+    self.boxdata.x_2=get_int_from_spinbutton(self.entry_x2)
+    self.boxdata.y_1=get_int_from_spinbutton(self.entry_y1)
+    self.boxdata.y_2=get_int_from_spinbutton(self.entry_y2)
 
     return self.boxdata
 
@@ -798,6 +781,13 @@ class BoxDataListArea:
     tvcolumn.add_attribute(cell, 'text', 4)
     treeview.set_reorderable(True)
 
+    tvcolumn = gtk.TreeViewColumn("x'")
+    treeview.append_column(tvcolumn)
+    cell = gtk.CellRendererText()
+    tvcolumn.pack_start(cell, True)
+    tvcolumn.add_attribute(cell, 'text', 6)
+    treeview.set_reorderable(True)
+
     tvcolumn = gtk.TreeViewColumn('y')
     treeview.append_column(tvcolumn)
     cell = gtk.CellRendererText()
@@ -805,14 +795,8 @@ class BoxDataListArea:
     tvcolumn.add_attribute(cell, 'text', 5)
     treeview.set_reorderable(True)
 
-    tvcolumn = gtk.TreeViewColumn('width')
-    treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
-    tvcolumn.pack_start(cell, True)
-    tvcolumn.add_attribute(cell, 'text', 6)
-    treeview.set_reorderable(True)
 
-    tvcolumn = gtk.TreeViewColumn('height')
+    tvcolumn = gtk.TreeViewColumn("y'")
     treeview.append_column(tvcolumn)
     cell = gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
@@ -874,14 +858,14 @@ class BoxDataListArea:
     self.button_edit=button
 #    button.connect('clicked', self.edit_selected)
 
-    button = gtk.Button(stock=gtk.STOCK_COPY)
-    hbox.add(button)
-    self.button_copy=button
+#    button = gtk.Button(stock=gtk.STOCK_COPY)
+#    hbox.add(button)
+#    self.button_copy=button
 #    button.connect('clicked', self.edit_selected)
 
-    button = gtk.Button(stock=gtk.STOCK_PASTE)
-    hbox.add(button)
-    self.button_paste=button
+#    button = gtk.Button(stock=gtk.STOCK_PASTE)
+#    hbox.add(button)
+#    self.button_paste=button
 #    button.connect('clicked', self.edit_selected)
 
     vbox.show_all()
@@ -890,7 +874,7 @@ class BoxDataListArea:
     return self.vbox
 
   def get_buttons(self):
-    return (self.button_new,self.button_remove,self.button_edit,self.button_copy,self.button_paste)
+    return (self.button_new,self.button_remove,self.button_edit)
 
   def append_boxdata(self,boxdata):
     data=(boxdata.id,boxdata.name,boxdata.sampletext,boxdata.page,boxdata.x_1,boxdata.x_2,boxdata.y_1,boxdata.y_2,BoxData.DESCRIPTION_VALIGN[boxdata.valign],BoxData.DESCRIPTION_HALIGN[boxdata.halign],BoxData.DESCRIPTION_TYPE[boxdata.type])
@@ -946,22 +930,15 @@ class LayoutOverBoxes(gtk.Layout):
     ctx = widget.bin_window.cairo_create()  
     if self.back_ground_image:
       self.back_ground_image.render(ctx)
-    for box in self.projectdata.boxes:
-      if self.page != box.page:
-        continue
+    for box in self.projectdata.x_boxdata_in_the_page(self.page):
       if box.hilight:
         (r,g,b,a)=(0.9,0.2,0.4, 0.005)
       else:
         (r,g,b,a)=(1,0.5,0.5, 0.1)
       ctx.set_source_rgba(r,g,b,a)
+      (x1,x2,width,y1,y2,height)=self.projectdata.get_box_coordinate(box)
+      
       ctx.new_path()
-      x1=self.projectdata.get_grid_coordinate_by_id(box.x_1)
-      x2=self.projectdata.get_grid_coordinate_by_id(box.x_2)
-      width=x2-x1
-      y1=self.projectdata.get_grid_coordinate_by_id(box.y_1)
-      y2=self.projectdata.get_grid_coordinate_by_id(box.y_2)
-      height=y2-y1
-      print box.x_1,x1,box.x_2,x2,box.y_1,y1,box.y_2,y2
       ctx.move_to(x1, y1)                      
       ctx.rel_line_to(width, 0)       
       ctx.rel_line_to(0, height)      
@@ -975,7 +952,7 @@ class LayoutOverBoxes(gtk.Layout):
       ctx.move_to(x1, y1)                      
       ctx.rel_line_to(width, 0)       
       ctx.rel_line_to(0, height)      
-      ctx.rel_line_to(-1 * width, 0)  
+      ctx.rel_line_to(-width, 0)  
       ctx.close_path()                       
       ctx.stroke()
 
@@ -990,7 +967,7 @@ class LayoutOverBoxes(gtk.Layout):
 
       w=int(width*2/3)
       d=-int(width/10)
-      dy=int(width/6)
+      dy=int(height/6)
       if box.valign==BoxData.VALIGN_TOP:
         y=y1
       elif box.valign==BoxData.VALIGN_BOTTOM:
@@ -1056,14 +1033,17 @@ class Bar(gtk.DrawingArea):
   def __init__(self,direction,margin):
     gtk.DrawingArea.__init__(self)
     self.width = self.height = 0
-    self.red=0.5
-    self.green=0.5
-    self.blue=0.1
-    self.alpha=0.5
     self.direction=direction
     self.connect('size-allocate', self.on_self_size_allocate)
     self.connect('expose-event', self.on_self_expose_event)
     self.margin=margin
+    self.hilight_mode=1
+    
+  def get_background_rgba(self):
+    return (0.5,0.1,0.1,0.3)
+    
+  def get_line_rgba(self):
+    return (1,0,0,1)
     
   def on_self_size_allocate(self, widget, allocation):
     self.width = allocation.width
@@ -1071,45 +1051,53 @@ class Bar(gtk.DrawingArea):
     
   def on_self_expose_event(self, widget, event):
     ctx = widget.window.cairo_create()
-    ctx.set_source_rgba(self.red, self.green, self.blue, self.alpha)
     if self.direction & BarOnLayout.MASK_VIRTICAL_BAR:
-      ctx.set_source_rgba(self.red, self.green, self.blue, self.alpha)
-      ctx.new_path()                         
-      ctx.move_to(0, self.margin)
-      ctx.rel_line_to(0,self.height-self.margin)      
-      ctx.rel_line_to(self.width, 0)       
-      ctx.rel_line_to(0,-self.height+self.margin)      
-      ctx.close_path()                       
-      ctx.fill() 
-      
-      ctx.set_source_rgba(0,0,0,1)
-      ctx.new_path()                         
-      ctx.move_to(0, 0)                      
-      ctx.rel_line_to(0,self.height)      
-      ctx.rel_line_to(1, 0)       
-      ctx.rel_line_to(0,-self.height)      
-      ctx.close_path()                       
-      ctx.fill()
+      c = self.get_background_rgba()
+      if c != None:
+        (r,g,b,a)=c
+        ctx.set_source_rgba(r,g,b,a)
+        ctx.new_path()                         
+        ctx.move_to(0, self.margin)
+        ctx.rel_line_to(0,self.height-self.margin)      
+        ctx.rel_line_to(self.width, 0)       
+        ctx.rel_line_to(0,-self.height+self.margin)      
+        ctx.close_path()                       
+        ctx.fill() 
+      c = self.get_line_rgba()
+      if c != None:
+        (r,g,b,a)=c
+        ctx.set_source_rgba(r,g,b,a)
+        ctx.new_path()
+        ctx.move_to(0, 0)
+        ctx.rel_line_to(0,self.height)
+        ctx.rel_line_to(1, 0)
+        ctx.rel_line_to(0,-self.height)
+        ctx.close_path()
+        ctx.fill()
+
     else:
-      ctx.new_path()                         
-      ctx.move_to(self.margin, 0)                      
-      ctx.rel_line_to(self.width-self.margin, 0)       
-      ctx.rel_line_to(0,self.height)      
-      ctx.rel_line_to(-self.width+self.margin, 0)  
-      ctx.close_path()                       
-      ctx.fill() 
-      
-
-
-      ctx.set_source_rgba(0,0,0,1)
-      ctx.new_path()                         
-      ctx.move_to(0, 0)                      
-      ctx.rel_line_to(self.width, 0)       
-      ctx.rel_line_to(0,1)      
-      ctx.rel_line_to(-self.width, 0)  
-      ctx.close_path()                       
-      ctx.fill() 
-
+      c= self.get_background_rgba()
+      if c!=None:
+        (r,g,b,a)=c
+        ctx.set_source_rgba(r,g,b,a)
+        ctx.new_path()                         
+        ctx.move_to(self.margin, 0)                      
+        ctx.rel_line_to(self.width-self.margin, 0)       
+        ctx.rel_line_to(0,self.height)      
+        ctx.rel_line_to(-self.width+self.margin, 0)  
+        ctx.close_path()                       
+        ctx.fill() 
+      c= self.get_line_rgba()
+      if c!=None:
+        (r,g,b,a)=c
+        ctx.set_source_rgba(r,g,b,a)
+        ctx.new_path()                         
+        ctx.move_to(0, 0)                      
+        ctx.rel_line_to(self.width, 0)       
+        ctx.rel_line_to(0,1)      
+        ctx.rel_line_to(-self.width, 0)  
+        ctx.close_path()                       
+        ctx.fill() 
 
 class SpinButtonForBarOnLayout(gtk.SpinButton):
   def __init__(self,adj_max,a,b):
@@ -1117,7 +1105,7 @@ class SpinButtonForBarOnLayout(gtk.SpinButton):
     gtk.SpinButton.__init__(self,adj,a,b)
     self.set_width_chars(5)
     self.set_alignment(1.0)
-    self.connect("changed", self.move_bar)
+    self.connect("changed", self.move_bar_on_changed)
     self.bars=[]
     self.current_bar=None
     
@@ -1126,16 +1114,16 @@ class SpinButtonForBarOnLayout(gtk.SpinButton):
 #    self.set_current_bar(bar)
     
   def set_current_bar(self,bar):
-    if bar != self.current_bar:      
+    if bar != self.current_bar:
       self.current_bar=bar
       if bar.direction & bar.MASK_VIRTICAL_BAR:
         self.set_value(bar.x)
       else:
         self.set_value(bar.y)
       
-  def move_bar(self,widget):
+  def move_bar_on_changed(self,widget):
     if self.current_bar != None:
-      self.current_bar.move_to_value(get_int_from_spinbutton(self))
+      self.current_bar.set_value(get_int_from_spinbutton(self))
 
 class BarOnLayout(gtk.EventBox):
   MASK_VIRTICAL_BAR=2
@@ -1181,19 +1169,26 @@ class BarOnLayout(gtk.EventBox):
   def get_spinbutton(self):
     return self.spinbutton
 
-  def move_to_value_of_spinbutton(self,widget):
-    self.move_to_value(get_int_from_spinbutton(self.spinbutton))
-#    self.parent.refresh_preview()
-
-  def move_to_value(self,v):
+  def set_value(self,v):
     if self.draging:
-      return 
+      return
     if self.direction & self.MASK_VIRTICAL_BAR:
-      if v != self.x:
-        self.move_horizontal(v)
+      if v<0:
+        v=0
+      if self.max_x<v:
+        v=self.max_x
+      self.griddata.value=int(v)
+      self.move_horizontal(self.griddata.value)
+      self.parent.refresh_preview()
     else:
-      if v != self.y:
-        self.move_virtical(v)
+      if v<0:
+        v=0
+      if self.max_y<v:
+        v=self.max_y
+      self.griddata.value=int(v)
+      self.move_virtical(v)
+      self.parent.refresh_preview()
+
 
   def move_to(self,x, y):
     if self.direction & self.MASK_OPPOSIT_DIRECTION:
@@ -1273,30 +1268,13 @@ class BarOnLayout(gtk.EventBox):
     if not self.draging:
       return True
     x, y, state = self.parent.window.get_pointer()
-    if self.direction & self.MASK_VIRTICAL_BAR:
-      self.move_horizontal(x-self.margin_x)
-    else:
-      self.move_virtical(y-self.margin_y)
-
-    if self.direction & self.MASK_VIRTICAL_BAR:
-      if self.x<0:
-        self.move_horizontal(0)
-      if self.max_x<self.x:
-        self.move_horizontal(self.max_x)
-    else:
-      if self.y<0:
-        self.move_virtical(0)
-      if self.max_y<self.y:
-        self.move_virtical(self.max_y)
-    self.margin_x = 0
-    self.margin_y = 0
     self.draging=False
     if self.direction & self.MASK_VIRTICAL_BAR:
-      self.griddata.value=self.x
+      self.set_value(x-self.margin_x)
     else:
-      self.griddata.value=self.y
-
-    self.parent.refresh_preview()
+      self.set_value(y-self.margin_y)
+    self.margin_x = 0
+    self.margin_y = 0
     return True
   
 
@@ -1527,7 +1505,7 @@ class LayoutOverBoxesWithHoganArea:
     label=gtk.Label()
     hbox.add(label)
     label.set_markup("page: ")
-    adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.n_pages-1, step_incr=1)
+    adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.n_pages-1, step_incr=-1)
     entry=gtk.SpinButton(adj, 0, 0)
     entry.connect("changed", self.on_page_changed_event)
     hbox.add(entry)
@@ -1577,7 +1555,7 @@ class LayoutOverBoxesWithHoganArea:
     bar.show()
     self.layout.add(bar)
     self.layout.add(bar.get_label())
-    bar.move_to_value(griddata.value)
+    bar.set_value(griddata.value)
     return bar
   
   def add_new_x_ruler_onclick(self,widget):
@@ -1662,6 +1640,18 @@ class ProjectData:
     self.grids=[]
     self.set_default_dialog_size((self.lwidth,self.lheight))
 
+
+  def get_pages_with_boxdata(self):
+    pages=list(set([boxdata.page for boxdata in self.boxes]))
+    pages.sort()
+    return pages
+
+  def x_boxdata_in_the_page(self,i):
+    for boxdata in self.boxes:
+        if boxdata.page==i:
+          yield boxdata
+
+  
   def add_boxdata(self,boxdata):
     self.boxes.append(boxdata)
 
@@ -1680,7 +1670,6 @@ class ProjectData:
       return 0    
     return g.value
 
-
   def pop_boxdata_by_id(self,id):
     for (i,boxdata) in enumerate(self.boxes):
       if boxdata.id==id:
@@ -1694,6 +1683,19 @@ class ProjectData:
         return boxdata
     return None
 
+  def get_box_coordinate(self,box):
+    a=self.get_grid_coordinate_by_id(box.x_1)
+    b=self.get_grid_coordinate_by_id(box.x_2)
+    x1=min(a,b)
+    x2=max(a,b)
+    width=x2-x1
+    a=self.get_grid_coordinate_by_id(box.y_1)
+    b=self.get_grid_coordinate_by_id(box.y_2)
+    y1=min(a,b)
+    y2=max(a,b)
+    height=y2-y1
+    return (x1,x2,width,y1,y2,height)
+  
   def get_page(self,page):
     if self.pages[page]:
       return self.pages[page]
@@ -1703,7 +1705,7 @@ class ProjectData:
 
   def output_to_zipfile(self,destzip,rootdir):
     print "writing imagefiles...."
-    afd=applicationFormData(self.boxes,self.bgimagepath,self.boundingboxes)
+    afd=applicationFormData(self)
     afd.create_bgimage_file(self.bgimagefullpath,destzip,rootdir)
 
     print "writing the style file...."
@@ -1743,12 +1745,12 @@ class AFMMainArea:
     listarea=BoxDataListArea(self)
     self.box.pack_start(listarea.get_vbox())
     self.listarea=listarea
-    (button_new,button_remove,button_edit,button_copy,button_paste)=listarea.get_buttons()
+    (button_new,button_remove,button_edit)=listarea.get_buttons()
     button_new.connect('clicked', self.on_click_new)
     button_remove.connect('clicked', self.on_click_remove)
     button_edit.connect('clicked', self.on_click_edit)
-    button_copy.connect('clicked', self.on_click_copy)
-    button_paste.connect('clicked', self.on_click_paste)
+#    button_copy.connect('clicked', self.on_click_copy)
+#    button_paste.connect('clicked', self.on_click_paste)
 
 
     hbbox = gtk.HButtonBox() 
@@ -1890,72 +1892,72 @@ class AFMMainArea:
 
         self.current_coordinate=(boxdata.page,boxdata.x,boxdata.y,boxdata.width,boxdata.height)
 
-  def on_click_copy(self,widget):
-    (model,iteralist,boxids)=self.listarea.get_selected_ids()
-    if not boxids:
-      return
-    boxdata=[]
-    for (itera,boxid,) in zip(iteralist,boxids):
-      if boxid:
-        b=self.projectdata.get_boxdata_by_id(boxid)
-        if b:
-          boxdata.append(b)
-    if boxdata==[]:
-      return
-    dialog=gtk.MessageDialog(type=gtk.MESSAGE_INFO,buttons = gtk.BUTTONS_OK_CANCEL,message_format="To copy selected box(es), choose the base point of the box(es).")
-    r=dialog.run()
-    if r == gtk.RESPONSE_OK:
-      xx=[boxdata[0].x]
-      yy=[boxdata[0].y]
-      p=boxdata[0].page
-      rulerdialog = RulerDialog("Choose the base point",None,
-                        gtk.DIALOG_MODAL,
-                        (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                         gtk.STOCK_OK, gtk.RESPONSE_ACCEPT),
-                         self.projectdata,
-                         [True],[True],xx,yy,p)
+  # def on_click_copy(self,widget):
+  #   (model,iteralist,boxids)=self.listarea.get_selected_ids()
+  #   if not boxids:
+  #     return
+  #   boxdata=[]
+  #   for (itera,boxid,) in zip(iteralist,boxids):
+  #     if boxid:
+  #       b=self.projectdata.get_boxdata_by_id(boxid)
+  #       if b:
+  #         boxdata.append(b)
+  #   if boxdata==[]:
+  #     return
+  #   dialog=gtk.MessageDialog(type=gtk.MESSAGE_INFO,buttons = gtk.BUTTONS_OK_CANCEL,message_format="To copy selected box(es), choose the base point of the box(es).")
+  #   r=dialog.run()
+  #   if r == gtk.RESPONSE_OK:
+  #     xx=[boxdata[0].x]
+  #     yy=[boxdata[0].y]
+  #     p=boxdata[0].page
+  #     rulerdialog = RulerDialog("Choose the base point",None,
+  #                       gtk.DIALOG_MODAL,
+  #                       (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+  #                        gtk.STOCK_OK, gtk.RESPONSE_ACCEPT),
+  #                        self.projectdata,
+  #                        [True],[True],xx,yy,p)
 
-      r2 = rulerdialog.run()
-      self.projectdata.set_default_dialog_size(rulerdialog.get_size())
-      if r2==gtk.RESPONSE_ACCEPT:
-        self.my_clip_borad=(rulerdialog.get_coordinates(),boxdata)
-      rulerdialog.destroy()
-    else:
-      pass
-    dialog.destroy()
+  #     r2 = rulerdialog.run()
+  #     self.projectdata.set_default_dialog_size(rulerdialog.get_size())
+  #     if r2==gtk.RESPONSE_ACCEPT:
+  #       self.my_clip_borad=(rulerdialog.get_coordinates(),boxdata)
+  #     rulerdialog.destroy()
+  #   else:
+  #     pass
+  #   dialog.destroy()
 
-  def on_click_paste(self,widget):
-    (base,boxdata)=self.my_clip_borad
-    if not base:
-      return 
-    (xx,yy,p)=base
-    dialog=gtk.MessageDialog(type=gtk.MESSAGE_INFO,buttons = gtk.BUTTONS_OK_CANCEL,message_format="Choose the base point to paste.")
-    r=dialog.run()
-    if r == gtk.RESPONSE_OK:
-      rulerdialog = RulerDialog("Choose the base point",None,
-                        gtk.DIALOG_MODAL,
-                        (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                         gtk.STOCK_OK, gtk.RESPONSE_ACCEPT),
-                         self.projectdata,
-                         [True],[True],xx,yy,p)
-      r2 = rulerdialog.run()
-      self.projectdata.set_default_dialog_size(rulerdialog.get_size())
-      if r2==gtk.RESPONSE_ACCEPT:
-        destbase=rulerdialog.get_coordinates()
-        rulerdialog.destroy()
-        (dxx,dyy,dp)=destbase
-        dx=dxx[0]-xx[0]
-        dy=dyy[0]-yy[0]
-        for bi in boxdata:
-          bbi=bi.get_similar_boxdata()
-          bbi.x=bbi.x+dx
-          bbi.y=bbi.y+dy
-          self.conform_and_add(bbi)
-      else:
-        rulerdialog.destroy()
-    else:
-      pass
-    dialog.destroy()
+  # def on_click_paste(self,widget):
+  #   (base,boxdata)=self.my_clip_borad
+  #   if not base:
+  #     return 
+  #   (xx,yy,p)=base
+  #   dialog=gtk.MessageDialog(type=gtk.MESSAGE_INFO,buttons = gtk.BUTTONS_OK_CANCEL,message_format="Choose the base point to paste.")
+  #   r=dialog.run()
+  #   if r == gtk.RESPONSE_OK:
+  #     rulerdialog = RulerDialog("Choose the base point",None,
+  #                       gtk.DIALOG_MODAL,
+  #                       (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+  #                        gtk.STOCK_OK, gtk.RESPONSE_ACCEPT),
+  #                        self.projectdata,
+  #                        [True],[True],xx,yy,p)
+  #     r2 = rulerdialog.run()
+  #     self.projectdata.set_default_dialog_size(rulerdialog.get_size())
+  #     if r2==gtk.RESPONSE_ACCEPT:
+  #       destbase=rulerdialog.get_coordinates()
+  #       rulerdialog.destroy()
+  #       (dxx,dyy,dp)=destbase
+  #       dx=dxx[0]-xx[0]
+  #       dy=dyy[0]-yy[0]
+  #       for bi in boxdata:
+  #         bbi=bi.get_similar_boxdata()
+  #         bbi.x=bbi.x+dx
+  #         bbi.y=bbi.y+dy
+  #         self.conform_and_add(bbi)
+  #     else:
+  #       rulerdialog.destroy()
+  #   else:
+  #     pass
+  #   dialog.destroy()
 
 
   def get_boxdata_by_dialog(self,boxdata,title,message):
