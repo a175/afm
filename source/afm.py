@@ -790,14 +790,14 @@ class BoxDataListArea:
     treeview.append_column(tvcolumn)
     cell = gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
-    tvcolumn.add_attribute(cell, 'text', 6)
+    tvcolumn.add_attribute(cell, 'text', 5)
     treeview.set_reorderable(True)
 
     tvcolumn = gtk.TreeViewColumn('y')
     treeview.append_column(tvcolumn)
     cell = gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
-    tvcolumn.add_attribute(cell, 'text', 5)
+    tvcolumn.add_attribute(cell, 'text', 6)
     treeview.set_reorderable(True)
 
 
@@ -849,7 +849,8 @@ class BoxDataListArea:
     hbox = gtk.HButtonBox() 
     vbox.pack_start(hbox,expand=False, fill=False)
     hbox.set_layout(gtk.BUTTONBOX_END)
-
+    self.buttonbox=hbox
+    
     button = gtk.Button(stock=gtk.STOCK_NEW)
     hbox.add(button)
     self.button_new=button
@@ -877,7 +878,10 @@ class BoxDataListArea:
     
   def get_vbox(self):
     return self.vbox
-
+  
+  def get_buttonbox(self):
+    return self.buttonbox
+  
   def get_buttons(self):
     return (self.button_new,self.button_remove,self.button_edit)
 
@@ -1303,7 +1307,7 @@ class BarOnLayout(gtk.EventBox):
         self.spinbutton.set_value(self.y)
     if self.griddata.is_horizontal:
       self.griddata.value=self.y
-      self.parent.move(self.label, x+self.margin, self.y+self.LINEWIDTH)
+      self.parent.move(self.label, x+self.margin, self.y)
     else:
       self.griddata.value=self.x
       self.parent.move(self.label, self.x+self.LINEWIDTH, y+self.margin)
@@ -1321,7 +1325,7 @@ class BarOnLayout(gtk.EventBox):
       self.spinbutton.set_current_bar(self)
       self.spinbutton.set_value(self.y)
     self.parent.move(self,self.x,y)
-    self.parent.move(self.label, self.x+self.margin, y+self.LINEWIDTH)
+    self.parent.move(self.label, self.x+self.margin, y)
 
       
   def move_horizontal(self,x):
@@ -1395,20 +1399,20 @@ class BoxDataDialog(gtk.Dialog):
   def get_boxdata(self):
     return self.area.update_and_get_boxdata()
 
-class RulerDialog(gtk.Dialog):
-  def __init__(self,title=None, parent=None, flags=0, buttons=None,projectdata=None,xrulers_lr=[],yrulers_ud=[],xx=[],yy=[],p=0):
-    gtk.Dialog.__init__(self,title,parent,flags,buttons)
-    self.area=LayoutOverBoxesWithRulersArea(projectdata,xrulers_lr,yrulers_ud,xx,yy,p)
-    self.vbox.pack_start(self.area.get_box())
-    (w,h)=projectdata.get_default_dialog_size()
-    self.resize(w,h)
+# class RulerDialog(gtk.Dialog):
+#   def __init__(self,title=None, parent=None, flags=0, buttons=None,projectdata=None,xrulers_lr=[],yrulers_ud=[],xx=[],yy=[],p=0):
+#     gtk.Dialog.__init__(self,title,parent,flags,buttons)
+#     self.area=LayoutOverBoxesWithRulersArea(projectdata,xrulers_lr,yrulers_ud,xx,yy,p)
+#     self.vbox.pack_start(self.area.get_box())
+#     (w,h)=projectdata.get_default_dialog_size()
+#     self.resize(w,h)
 
-  def get_coordinates(self):
-    return self.area.get_coordinates()
+#   def get_coordinates(self):
+#     return self.area.get_coordinates()
 
-  def refresh_preview(self):
-    if self.area:
-      self.area.refresh_preview()
+#   def refresh_preview(self):
+#     if self.area:
+#       self.area.refresh_preview()
 
 class HoganDialog(gtk.Dialog):
   def __init__(self,title=None, parent=None, flags=0, buttons=None, projectdata=None,p=0):
@@ -1418,8 +1422,8 @@ class HoganDialog(gtk.Dialog):
     (w,h)=projectdata.get_default_dialog_size()
     self.resize(w,h)
 
-  def get_coordinates(self):
-    return self.area.get_coordinates()
+  def get_currentpage(self):
+    return self.area.get_currentpage()
 
   def refresh_preview(self):
     if self.area:
@@ -1659,7 +1663,11 @@ class LayoutOverBoxesWithHoganArea:
     hbox.add(box)
     hbox.show_all()
     self.box=hbox
-    
+
+    for griddata in self.projectdata.grids:
+      self.add_ruler(griddata)
+#      self.spb.set_value(0)
+      
   def add_ruler(self,griddata):
     w=self.projectdata.lwidth
     h=self.projectdata.lheight
@@ -1673,7 +1681,6 @@ class LayoutOverBoxesWithHoganArea:
     self.layout.add(bar)
     self.layout.add(bar.get_label())
     bar.set_value(griddata.value)
-    return bar
 
   def add_new_ruler(self):
     if self.new_ruler_will_be_horizontal:
@@ -1682,7 +1689,7 @@ class LayoutOverBoxesWithHoganArea:
       v=self.projectdata.lwidth
     p=self.layout.page
     g=GridData(p,v//2,self.new_ruler_will_be_horizontal)
-    bar=self.add_ruler(g)
+    self.add_ruler(g)
     self.projectdata.add_grid(g)
     
   def add_new_ruler_onclick(self,widget):
@@ -1713,8 +1720,8 @@ class LayoutOverBoxesWithHoganArea:
       ri.set_current_page(p)
     self.layout.set_page(p)
 
-  def get_coordinates(self):
-    return ([ruler.x for ruler in self.rulers if not ruler.griddata.is_horizontal],[ruler.y for ruler in self.y_rulers if  ruler.griddata.is_horizontal],self.layout.page)
+  def get_currentpage(self):
+    return self.layout.page
 
 
 class ProjectData:
@@ -1863,7 +1870,6 @@ class ProjectData:
 class AFMMainArea:
   def __init__(self,projectdata):
     self.projectdata=projectdata
-    self.current_coordinate=None    
     self.my_clip_board=((0,0),[])
     
     self.box=gtk.VBox()
@@ -1877,45 +1883,54 @@ class AFMMainArea:
 #    button_copy.connect('clicked', self.on_click_copy)
 #    button_paste.connect('clicked', self.on_click_paste)
 
+    hbbox = gtk.HButtonBox()
+    listarea.get_buttonbox().pack_start(hbbox,expand=False, fill=False)
+
+    hbbox.set_layout(gtk.BUTTONBOX_END)
+    button = gtk.Button("Show Grids/Preview")
+    button.connect('clicked', self.on_click_preview)
+    hbbox.add(button)
+    self.open_preview_button=button
+
 
     hbbox = gtk.HButtonBox() 
     listarea.get_vbox().pack_start(hbbox,expand=False, fill=False)
     hbbox.set_layout(gtk.BUTTONBOX_END)
+
+    
     button = gtk.Button(stock=gtk.STOCK_SAVE_AS)
     button.connect('clicked', self.on_click_save_as)
     hbbox.add(button)
     hbbox.show_all()
 
     self.box.show_all()
-    self.open_preview_dialog()
+    
+    self.preview=None
+#    self.open_preview_dialog()
     
   def open_preview_dialog(self):
-    (p,x,y,w,h)=self.get_current_coordinate()
     dialog=HoganDialog("Preview",None,
                        gtk.DIALOG_DESTROY_WITH_PARENT,
                        None,
-                       self.projectdata,p)
+                       self.projectdata,0)
+    dialog.connect("delete_event", self.on_delete_preview_dialog)
     dialog.show()
     self.preview=dialog
-
-  def get_current_coordinate(self):
-    if self.current_coordinate:
-      return self.current_coordinate
-    else:
-      p=0
-      x=self.projectdata.lwidth//5
-      w=self.projectdata.lwidth*3//5
-      y=self.projectdata.lheight//7
-      h=self.projectdata.lheight//6
-      return (p,x,y,w,h)
-
-#  def set_current_coordinate(self,boxdata):
-#    self.current_coordinate=(boxdata.page,boxdata.x,boxdata.y,boxdata.width,boxdata.height)
-
+  
+  def on_delete_preview_dialog(self,widget,event,data=None):
+    self.preview=None
+    self.open_preview_button.set_sensitive(True)
+    return False
+  
 
   def get_box(self):
     return self.box
 
+  def on_click_preview(self,widget):
+    self.open_preview_button.set_sensitive(False)
+    if self.preview == None:
+      self.open_preview_dialog()
+      
   def on_click_save_as(self,widget):
     dialog = gtk.FileChooserDialog('Select zip file to save.',None,
                                    action=gtk.FILE_CHOOSER_ACTION_SAVE,
@@ -1959,10 +1974,44 @@ class AFMMainArea:
   def refresh_preview(self):
       if self.preview:
         self.preview.refresh_preview()
+        
+  def get_initial_boxdata(self):
+    p=0
+    x1=0
+    x2=1
+    y1=2
+    y2=3
+    if self.preview != None:
+      p=self.preview.get_currentpage()
 
+    xx=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if not griddata.is_horizontal  if griddata.page==p]
+    if len(xx)>0:
+      xx.sort()
+      x1=xx[0][1]
+      x2=xx[-1][1]
+    else:
+      xx=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if not griddata.is_horizontal]
+      if len(xx)>0:
+        xx.sort()
+        x1=xx[0][1]
+        x2=xx[-1][1]
+    yy=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if  griddata.is_horizontal and griddata.page==p]
+    if len(yy)>0:
+      yy.sort()
+      y1=yy[0][1]
+      y2=yy[-1][1]
+    else:
+      yy=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if griddata.is_horizontal]
+      if len(yy)>0:
+        yy.sort()
+        y1=yy[0][1]
+        y2=yy[-1][1]
+    
+    return BoxData(p,x1,x2,y1,y2)
+  
   def on_click_new(self,widget):
-    (p,x,y,w,h)=self.get_current_coordinate()
-    boxdata=BoxData(p,0,2,1,3)    
+
+    boxdata=self.get_initial_boxdata()
     self.conform_and_add(boxdata)
 
   def conform_and_add(self,boxdata):
@@ -1973,7 +2022,6 @@ class AFMMainArea:
       self.listarea.append_boxdata(boxdata)
       self.projectdata.add_boxdata(boxdata)
       self.refresh_preview()
-#      self.set_current_coordinate(boxdata)
 
   def on_click_remove(self,widget):
     (model,iteralist,boxids)=self.listarea.get_selected_ids()
@@ -2014,7 +2062,6 @@ class AFMMainArea:
         model.remove(itera)
         self.listarea.append_boxdata(boxdata)
 
-        self.current_coordinate=(boxdata.page,boxdata.x,boxdata.y,boxdata.width,boxdata.height)
 
   # def on_click_copy(self,widget):
   #   (model,iteralist,boxids)=self.listarea.get_selected_ids()
