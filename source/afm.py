@@ -1037,14 +1037,44 @@ class Bar(gtk.DrawingArea):
     self.connect('size-allocate', self.on_self_size_allocate)
     self.connect('expose-event', self.on_self_expose_event)
     self.margin=margin
-    self.hilight_mode=1
+    self.hilight_mode=0
+
+  def set_hilight_mode(self,mode):
+    self.hilight_mode=mode
     
   def get_background_rgba(self):
-    return (0.5,0.1,0.1,0.3)
+    if self.hilight_mode==0:
+      return (0.5,0.1,0.1,0.1)
+    elif self.hilight_mode==1:
+      return (1.0,0.2,0.2,0.7)
+    elif self.hilight_mode==2:
+      return (0.1,0.1,0.5,0.1)
+    elif self.hilight_mode==3:
+      return (0.1,0.5,0.5,0.5)
+    elif self.hilight_mode==4:
+      return (0.5,0.1,0.5,0.5)
+    elif self.hilight_mode==5:
+      return (0.5,0.5,0.1,0.5)
+    else:
+      return (0.5,0.5,0.5,0.5)
     
   def get_line_rgba(self):
-    return (1,0,0,1)
-    
+    if self.hilight_mode==0:
+      return (0.7,0.05,0.05,1)
+    elif self.hilight_mode==1:
+      return (1.0,0.3,0.3,1)
+    elif self.hilight_mode==2:
+      return (0.1,0.1,0.5,1)
+    elif self.hilight_mode==3:
+      return (0.1,0.5,0.5,1)
+    elif self.hilight_mode==4:
+      return (0.5,0.1,0.5,1)
+    elif self.hilight_mode==5:
+      return (0.5,0.5,0.1,1)
+    else:
+      return (0.5,0.5,0.5,1)
+
+
   def on_self_size_allocate(self, widget, allocation):
     self.width = allocation.width
     self.height = allocation.height
@@ -1114,6 +1144,10 @@ class SpinButtonForBarOnLayout(gtk.SpinButton):
 #    self.set_current_bar(bar)
     
   def set_current_bar(self,bar):
+    if self.current_bar != None:
+      self.current_bar.set_hilight_mode(0)
+    if bar != None:
+      bar.set_hilight_mode(1)
     if bar != self.current_bar:
       self.current_bar=bar
       if bar.direction & bar.MASK_VIRTICAL_BAR:
@@ -1129,7 +1163,7 @@ class BarOnLayout(gtk.EventBox):
   MASK_VIRTICAL_BAR=2
   MASK_OPPOSIT_DIRECTION=1
   LINEWIDTH=3
-  def __init__(self,direction,max_x,max_y,spinbuttonforbar,griddata):
+  def __init__(self,direction,max_x,max_y,spinbuttonforbar,griddata,current_page):
     gtk.EventBox.__init__(self)
     self.x=0
     self.y=0
@@ -1148,13 +1182,14 @@ class BarOnLayout(gtk.EventBox):
     if direction & self.MASK_VIRTICAL_BAR:
       self.height=max_y
       self.width=self.LINEWIDTH
-      self.margin=(13+20*griddata.id)%self.height
+      self.margin=(13+4*griddata.id)%self.height
 
     else:
       self.width=max_x
       self.height=self.LINEWIDTH
-      self.margin=(13+20*griddata.id)%self.width
+      self.margin=(13+4*griddata.id)%self.width
     drawingarea = Bar(direction,self.margin)
+    self.drawingarea=drawingarea
     drawingarea.set_size_request(self.width,self.height)
     self.add(drawingarea)
     drawingarea.show()
@@ -1162,7 +1197,30 @@ class BarOnLayout(gtk.EventBox):
     self.connect("motion_notify_event", self.motion_notify_event)
     self.connect("button_press_event", self.button_press_event)
     self.connect("button_release_event", self.button_release_event)
-
+    self.current_page=current_page
+    self.hilight_mode=0
+    self.set_hilight()
+    
+  def set_hilight(self):
+    if self.current_page==self.griddata.page:
+      if self.hilight_mode==0:
+        self.drawingarea.set_hilight_mode(0)
+      else:
+        self.drawingarea.set_hilight_mode(1)
+    else:
+      if self.hilight_mode==0:
+        self.drawingarea.set_hilight_mode(2)
+      else:
+        self.drawingarea.set_hilight_mode(3)
+        
+  def set_hilight_mode(self,mode):
+    self.hilight_mode=mode
+    self.set_hilight()
+    
+  def set_current_page(self,p):
+    self.current_page=p
+    self.set_hilight()
+    
   def get_label(self):
     return self.label
   
@@ -1335,128 +1393,128 @@ class HoganDialog(gtk.Dialog):
       self.area.refresh_preview()
 
 
-class LayoutOverBoxesWithRulersArea:
-  HEIGHT = 600
-  WIDTH = 600
+# class LayoutOverBoxesWithRulersArea:
+#   HEIGHT = 600
+#   WIDTH = 600
 
-  def __init__(self,projectdata,x_rulers_lr,y_rulers_ud,xx,yy,p):
-    self.projectdata=projectdata
-    box = gtk.VBox(False,0)
-    box.show()
-    table = gtk.Table(2, 2, False)
-    table.show()
-    box.pack_start(table, True, True, 0)
-    layout = LayoutOverBoxes(self.projectdata)
-    self.layout = layout
-    self.layout.set_page(p)
+#   def __init__(self,projectdata,x_rulers_lr,y_rulers_ud,xx,yy,p):
+#     self.projectdata=projectdata
+#     box = gtk.VBox(False,0)
+#     box.show()
+#     table = gtk.Table(2, 2, False)
+#     table.show()
+#     box.pack_start(table, True, True, 0)
+#     layout = LayoutOverBoxes(self.projectdata)
+#     self.layout = layout
+#     self.layout.set_page(p)
 
-    layout.set_size(self.projectdata.lwidth, self.projectdata.lheight)
-    layout.connect("size-allocate", self.layout_resize)
-    layout.show()
-    table.attach(layout, 0, 1, 0, 1, gtk.FILL|gtk.EXPAND,
-                 gtk.FILL|gtk.EXPAND, 0, 0)
-    vScrollbar = gtk.VScrollbar(None)
-    vScrollbar.show()
-    table.attach(vScrollbar, 1, 2, 0, 1, gtk.FILL|gtk.SHRINK,
-                 gtk.FILL|gtk.SHRINK, 0, 0)
-    hScrollbar = gtk.HScrollbar(None)
-    hScrollbar.show()
-    table.attach(hScrollbar, 0, 1, 1, 2, gtk.FILL|gtk.SHRINK,
-                 gtk.FILL|gtk.SHRINK,
-                 0, 0)	
-    vAdjust = layout.get_vadjustment()
-    vScrollbar.set_adjustment(vAdjust)
-    hAdjust = layout.get_hadjustment()
-    hScrollbar.set_adjustment(hAdjust)
+#     layout.set_size(self.projectdata.lwidth, self.projectdata.lheight)
+#     layout.connect("size-allocate", self.layout_resize)
+#     layout.show()
+#     table.attach(layout, 0, 1, 0, 1, gtk.FILL|gtk.EXPAND,
+#                  gtk.FILL|gtk.EXPAND, 0, 0)
+#     vScrollbar = gtk.VScrollbar(None)
+#     vScrollbar.show()
+#     table.attach(vScrollbar, 1, 2, 0, 1, gtk.FILL|gtk.SHRINK,
+#                  gtk.FILL|gtk.SHRINK, 0, 0)
+#     hScrollbar = gtk.HScrollbar(None)
+#     hScrollbar.show()
+#     table.attach(hScrollbar, 0, 1, 1, 2, gtk.FILL|gtk.SHRINK,
+#                  gtk.FILL|gtk.SHRINK,
+#                  0, 0)	
+#     vAdjust = layout.get_vadjustment()
+#     vScrollbar.set_adjustment(vAdjust)
+#     hAdjust = layout.get_hadjustment()
+#     hScrollbar.set_adjustment(hAdjust)
     
-    coordinate_hbox=gtk.HBox(spacing=20)
+#     coordinate_hbox=gtk.HBox(spacing=20)
 
-    hbox=gtk.HBox()
-    coordinate_hbox.add(hbox)
-    label=gtk.Label()
-    hbox.add(label)
-    label.set_markup("page: ")
-    adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.n_pages-1, step_incr=-1)
-    entry=gtk.SpinButton(adj, 0, 0)
-    entry.connect("changed", self.on_page_changed_event)
-    hbox.add(entry)
+#     hbox=gtk.HBox()
+#     coordinate_hbox.add(hbox)
+#     label=gtk.Label()
+#     hbox.add(label)
+#     label.set_markup("page: ")
+#     adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.n_pages-1, step_incr=-1)
+#     entry=gtk.SpinButton(adj, 0, 0)
+#     entry.connect("changed", self.on_page_changed_event)
+#     hbox.add(entry)
 
 
 
-    max_x=self.projectdata.lwidth
-    max_y=self.projectdata.lheight
+#     max_x=self.projectdata.lwidth
+#     max_y=self.projectdata.lheight
 
-    self.x_rulers=[]
-    if x_rulers_lr != []:
-      hbox=gtk.HBox()
-      coordinate_hbox.add(hbox)
+#     self.x_rulers=[]
+#     if x_rulers_lr != []:
+#       hbox=gtk.HBox()
+#       coordinate_hbox.add(hbox)
 
-      label=gtk.Label()
-      hbox.add(label)
-      label.set_markup("x: ")
-      for ruler_i_is_left in x_rulers_lr:
-        if ruler_i_is_left:
-          bar=BarOnLayout(3,max_x,max_y)
-        else:
-          bar=BarOnLayout(2,max_x,max_y)
-        self.x_rulers.append(bar)
-        bar.show()
-        self.layout.add(bar)
+#       label=gtk.Label()
+#       hbox.add(label)
+#       label.set_markup("x: ")
+#       for ruler_i_is_left in x_rulers_lr:
+#         if ruler_i_is_left:
+#           bar=BarOnLayout(3,max_x,max_y)
+#         else:
+#           bar=BarOnLayout(2,max_x,max_y)
+#         self.x_rulers.append(bar)
+#         bar.show()
+#         self.layout.add(bar)
 
         
-        hbox.add(bar.get_spinbutton())
+#         hbox.add(bar.get_spinbutton())
 
 
-    self.y_rulers=[]
-    if y_rulers_ud != []:
-      hbox=gtk.HBox()
-      coordinate_hbox.add(hbox)
+#     self.y_rulers=[]
+#     if y_rulers_ud != []:
+#       hbox=gtk.HBox()
+#       coordinate_hbox.add(hbox)
 
-      label=gtk.Label()
-      hbox.add(label)
-      label.set_markup("y: ")
-      for ruler_i_is_down in y_rulers_ud:
-        if ruler_i_is_down:
-          bar=BarOnLayout(1,max_x,max_y)
-        else:
-          bar=BarOnLayout(0,max_x,max_y)
-        self.y_rulers.append(bar)
-        bar.show()
-        self.layout.add(bar)
-        hbox.add(bar.get_spinbutton())
+#       label=gtk.Label()
+#       hbox.add(label)
+#       label.set_markup("y: ")
+#       for ruler_i_is_down in y_rulers_ud:
+#         if ruler_i_is_down:
+#           bar=BarOnLayout(1,max_x,max_y)
+#         else:
+#           bar=BarOnLayout(0,max_x,max_y)
+#         self.y_rulers.append(bar)
+#         bar.show()
+#         self.layout.add(bar)
+#         hbox.add(bar.get_spinbutton())
 
-    coordinate_hbox.show_all()
-    box.pack_start(coordinate_hbox, False, False, 0)
+#     coordinate_hbox.show_all()
+#     box.pack_start(coordinate_hbox, False, False, 0)
 
     
-    self.move_rulers(xx,yy)
+#     self.move_rulers(xx,yy)
 
-    hbox=gtk.HBox()
-    hbox.add(box)
-    hbox.show_all()
-    self.box=hbox
+#     hbox=gtk.HBox()
+#     hbox.add(box)
+#     hbox.show_all()
+#     self.box=hbox
 
-  def refresh_preview(self):
-    self.layout.refresh_preview()
+#   def refresh_preview(self):
+#     self.layout.refresh_preview()
 
-  def get_box(self):
-    return self.box
+#   def get_box(self):
+#     return self.box
 
-  def move_rulers(self,xx,yy):
-    for (ruler,xi) in zip(self.x_rulers,xx):
-      ruler.move_to(xi,0)
-    for (ruler,yi) in zip(self.y_rulers,yy):
-      ruler.move_to(0,yi)
+#   def move_rulers(self,xx,yy):
+#     for (ruler,xi) in zip(self.x_rulers,xx):
+#       ruler.move_to(xi,0)
+#     for (ruler,yi) in zip(self.y_rulers,yy):
+#       ruler.move_to(0,yi)
 
-  def layout_resize(self, widget, event):
-    x, y, width, height = widget.get_allocation()
-    if width > self.projectdata.lwidth or height > self.projectdata.lheight:
-      lwidth = max(width, self.projectdata.lwidth)
-      lheight = max(height, self.projectdata.lheight)
-      widget.set_size(lwidth, lheight)
+#   def layout_resize(self, widget, event):
+#     x, y, width, height = widget.get_allocation()
+#     if width > self.projectdata.lwidth or height > self.projectdata.lheight:
+#       lwidth = max(width, self.projectdata.lwidth)
+#       lheight = max(height, self.projectdata.lheight)
+#       widget.set_size(lwidth, lheight)
 
-  def on_page_changed_event(self,widget):
-    self.layout.set_page(get_int_from_spinbutton(widget))
+#   def on_page_changed_event(self,widget):
+#     self.layout.set_page(get_int_from_spinbutton(widget))
 
 
 #  def get_coordinates(self):
@@ -1518,7 +1576,7 @@ class LayoutOverBoxesWithHoganArea:
     self.coordinate_hbox.add(hbox)
     label=gtk.Label()
     hbox.add(label)
-    label.set_markup("coordinate: ")
+    label.set_markup("value: ")
     hbox.add(self.spb)
 
 
@@ -1547,10 +1605,11 @@ class LayoutOverBoxesWithHoganArea:
   def add_ruler(self,griddata):
     w=self.projectdata.lwidth
     h=self.projectdata.lheight
+    p=self.layout.page
     if griddata.is_horizontal:
-      bar=BarOnLayout(1,w,h,self.spb,griddata)
+      bar=BarOnLayout(1,w,h,self.spb,griddata,p)
     else:
-      bar=BarOnLayout(2,w,h,self.spb,griddata)
+      bar=BarOnLayout(2,w,h,self.spb,griddata,p)
     self.rulers.append(bar)
     bar.show()
     self.layout.add(bar)
@@ -1560,13 +1619,15 @@ class LayoutOverBoxesWithHoganArea:
   
   def add_new_x_ruler_onclick(self,widget):
     w=self.projectdata.lwidth
-    g=GridData(0,w//2,False)
+    p=self.layout.page
+    g=GridData(p,w//2,False)
     bar=self.add_ruler(g)
     self.projectdata.add_grid(g)
     
   def add_new_y_ruler_onclick(self,widget):
     h=self.projectdata.lheight
-    g=GridData(0,h//2,True)
+    p=self.layout.page
+    g=GridData(p,h//2,True)
     bar=self.add_ruler(g)
     self.projectdata.add_grid(g)
 
@@ -1586,7 +1647,10 @@ class LayoutOverBoxesWithHoganArea:
       widget.set_size(lwidth, lheight)
 
   def on_page_changed_event(self,widget):
-    self.layout.set_page(get_int_from_spinbutton(widget))
+    p=get_int_from_spinbutton(widget)
+    for ri in self.rulers:
+      ri.set_current_page(p)
+    self.layout.set_page(p)
 
   def get_coordinates(self):
     return ([ruler.x for ruler in self.rulers if not ruler.griddata.is_horizontal],[ruler.y for ruler in self.y_rulers if  ruler.griddata.is_horizontal],self.layout.page)
