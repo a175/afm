@@ -1182,7 +1182,7 @@ class BarOnLayout(gtk.EventBox):
     if direction & self.MASK_VIRTICAL_BAR:
       self.height=max_y
       self.width=self.LINEWIDTH
-      self.margin=(13+4*griddata.id)%self.height
+      self.margin=(13+9*griddata.id)%self.height
 
     else:
       self.width=max_x
@@ -1568,6 +1568,7 @@ class LayoutOverBoxesWithHoganArea:
     entry.connect("changed", self.on_page_changed_event)
     hbox.add(entry)
 
+    coordinate_hbox.add(gtk.VSeparator())
 
     w=self.projectdata.lwidth
     h=self.projectdata.lheight
@@ -1579,18 +1580,24 @@ class LayoutOverBoxesWithHoganArea:
     label.set_markup("value: ")
     hbox.add(self.spb)
 
-
+    coordinate_hbox.add(gtk.VSeparator())
+  
     hbox = gtk.HButtonBox()
     coordinate_hbox.add(hbox)
     hbox.set_layout(gtk.BUTTONBOX_END)
+
+    combobox = gtk.combo_box_new_text()
+    hbox.add(combobox)
+    combobox.append_text("---")
+    combobox.append_text(" | ")#####@@@@@
+    combobox.connect('changed', self.toggle_ruler_direction_onchange)
+    self.new_ruler_will_be_horizontal=True
+    combobox.set_active(0)
+    
     button = gtk.Button(stock=gtk.STOCK_ADD)
     hbox.add(button)
     self.button_edit=button
-    button.connect('clicked', self.add_new_x_ruler_onclick)
-    button = gtk.Button(stock=gtk.STOCK_ADD)
-    hbox.add(button)
-    self.button_edit=button
-    button.connect('clicked', self.add_new_y_ruler_onclick)
+    button.connect('clicked', self.add_new_ruler_onclick)
 
     self.rulers=[]
 
@@ -1616,23 +1623,26 @@ class LayoutOverBoxesWithHoganArea:
     self.layout.add(bar.get_label())
     bar.set_value(griddata.value)
     return bar
-  
-  def add_new_x_ruler_onclick(self,widget):
-    w=self.projectdata.lwidth
-    p=self.layout.page
-    g=GridData(p,w//2,False)
-    bar=self.add_ruler(g)
-    self.projectdata.add_grid(g)
-    
-  def add_new_y_ruler_onclick(self,widget):
-    h=self.projectdata.lheight
-    p=self.layout.page
-    g=GridData(p,h//2,True)
-    bar=self.add_ruler(g)
-    self.projectdata.add_grid(g)
 
+  def add_new_ruler(self):
+    if self.new_ruler_will_be_horizontal:
+      v=self.projectdata.lheight
+    else:
+      v=self.projectdata.lwidth
+    p=self.layout.page
+    g=GridData(p,v//2,self.new_ruler_will_be_horizontal)
+    bar=self.add_ruler(g)
+    self.projectdata.add_grid(g)
     
+  def add_new_ruler_onclick(self,widget):
+    self.add_new_ruler()
   
+  def toggle_ruler_direction_onchange(self,widget):
+    if widget.get_active()==0:
+      self.new_ruler_will_be_horizontal=True
+    elif widget.get_active()==1:
+      self.new_ruler_will_be_horizontal=False
+
   def refresh_preview(self):
     self.layout.refresh_preview()
 
