@@ -627,6 +627,7 @@ class BoxDataEntryArea:
     table.attach(label,1,2,7,8)
     adjustment = gtk.Adjustment(value=boxdata.page,lower=0,upper=projectdata.n_pages,step_incr=1)
     entry=gtk.SpinButton(adjustment)
+    entry.set_value(boxdata.page)
     self.entry_page=entry
     table.attach(entry,2,3,7,8)
 
@@ -636,6 +637,7 @@ class BoxDataEntryArea:
     adjustment = gtk.Adjustment(value=boxdata.x_1,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
 
     entry=gtk.SpinButton(adjustment)
+    entry.set_value(boxdata.x_1)
     self.entry_x1=entry
     table.attach(entry,2,3,8,9)
 
@@ -644,6 +646,7 @@ class BoxDataEntryArea:
     table.attach(label,1,2,9,10)
     adjustment = gtk.Adjustment(value=boxdata.x_2,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
     entry=gtk.SpinButton(adjustment)
+    entry.set_value(boxdata.x_2)
     self.entry_x2=entry
     table.attach(entry,2,3,9,10)
 
@@ -652,6 +655,7 @@ class BoxDataEntryArea:
     table.attach(label,1,2,10,11)
     adjustment = gtk.Adjustment(value=boxdata.y_1,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
     entry=gtk.SpinButton(adjustment)
+    entry.set_value(boxdata.y_1)
     self.entry_y1=entry
     table.attach(entry,2,3,10,11)
 
@@ -660,6 +664,7 @@ class BoxDataEntryArea:
     table.attach(label,1,2,11,12)
     adjustment = gtk.Adjustment(value=boxdata.y_2,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
     entry=gtk.SpinButton(adjustment)
+    entry.set_value(boxdata.y_2)
     self.entry_y2=entry
     table.attach(entry,2,3,11,12)
 
@@ -1046,7 +1051,7 @@ class Bar(gtk.DrawingArea):
     if self.hilight_mode==0:
       return (0.5,0.1,0.1,0.1)
     elif self.hilight_mode==1:
-      return (1.0,0.2,0.2,0.7)
+      return (1.0,0.4,0.4,0.7)
     elif self.hilight_mode==2:
       return (0.1,0.1,0.5,0.1)
     elif self.hilight_mode==3:
@@ -1122,26 +1127,39 @@ class Bar(gtk.DrawingArea):
         (r,g,b,a)=c
         ctx.set_source_rgba(r,g,b,a)
         ctx.new_path()                         
-        ctx.move_to(0, 0)                      
+        ctx.move_to(0, self.height)                      
         ctx.rel_line_to(self.width, 0)       
-        ctx.rel_line_to(0,1)      
+        ctx.rel_line_to(0,-1)      
         ctx.rel_line_to(-self.width, 0)  
         ctx.close_path()                       
         ctx.fill() 
 
 class SpinButtonForBarOnLayout(gtk.SpinButton):
-  def __init__(self,adj_max,a,b):
+  def __init__(self,adj_max,a,b,id_adj,id_spb):
     adj=gtk.Adjustment(value=0,lower=0,upper=adj_max, step_incr=-1)
     gtk.SpinButton.__init__(self,adj,a,b)
     self.set_width_chars(5)
     self.set_alignment(1.0)
-    self.connect("changed", self.move_bar_on_changed)
     self.bars=[]
     self.current_bar=None
-    
+    self.id_adj=id_adj
+    self.id_spb=id_spb
+    self.update_upper_and_lower()
+
+
   def append_bar(self,bar):
     self.bars.append(bar)
-#    self.set_current_bar(bar)
+    self.update_upper_and_lower()
+
+  def update_upper_and_lower(self):
+    if self.bars==[]:
+      self.id_adj.set_upper(-1)
+      self.id_adj.set_lower(1)
+    else:
+      m=max([bar.griddata.id for bar in self.bars])
+      self.id_adj.set_upper(m)
+      m=min([bar.griddata.id for bar in self.bars])
+      self.id_adj.set_lower(m)
     
   def set_current_bar(self,bar):
     if self.current_bar != None:
@@ -1150,11 +1168,24 @@ class SpinButtonForBarOnLayout(gtk.SpinButton):
       bar.set_hilight_mode(1)
     if bar != self.current_bar:
       self.current_bar=bar
-      if bar.direction & bar.MASK_VIRTICAL_BAR:
-        self.set_value(bar.x)
-      else:
-        self.set_value(bar.y)
+    if bar != None:
+      self.set_value(bar.get_value())
+    else:
+      self.set_value(0)
+    if self.current_bar.griddata.id != get_int_from_spinbutton(self.id_spb):
+      self.id_spb.set_value(self.current_bar.griddata.id)
       
+  def get_bar_by_id(self,bar_id):
+    for bar in self.bars:
+      if bar.griddata.id==bar_id:
+        return bar
+    return None
+  
+  def set_current_bar_on_changed(self,widget):
+    bar_id=get_int_from_spinbutton(widget)
+    bar=self.get_bar_by_id(bar_id)
+    self.set_current_bar(bar)
+
   def move_bar_on_changed(self,widget):
     if self.current_bar != None:
       self.current_bar.set_value(get_int_from_spinbutton(self))
@@ -1170,11 +1201,8 @@ class BarOnLayout(gtk.EventBox):
     self.direction=direction
     self.max_x=max_x
     self.max_y=max_y
-
-    self.spinbutton=spinbuttonforbar
-    self.spinbutton.append_bar(self)
     self.griddata=griddata
-
+    self.spinbutton=spinbuttonforbar
     self.label=gtk.Label()
     self.label.set_markup(str(self.griddata.id))
     self.label.show()
@@ -1200,6 +1228,8 @@ class BarOnLayout(gtk.EventBox):
     self.current_page=current_page
     self.hilight_mode=0
     self.set_hilight()
+    self.spinbutton.append_bar(self)
+
     
   def set_hilight(self):
     if self.current_page==self.griddata.page:
@@ -1226,6 +1256,9 @@ class BarOnLayout(gtk.EventBox):
   
   def get_spinbutton(self):
     return self.spinbutton
+  
+  def get_value(self):
+    return self.griddata.value
 
   def set_value(self,v):
     if self.draging:
@@ -1557,39 +1590,55 @@ class LayoutOverBoxesWithHoganArea:
     
     coordinate_hbox=gtk.HBox(spacing=20)
     self.coordinate_hbox=coordinate_hbox
-    
+
+    self.coordinate_hbox.add(gtk.VSeparator())
+
     hbox=gtk.HBox()
     coordinate_hbox.add(hbox)
     label=gtk.Label()
     hbox.add(label)
-    label.set_markup("page: ")
+    label.set_markup("Current page: ")
+
+    
     adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.n_pages-1, step_incr=-1)
     entry=gtk.SpinButton(adj, 0, 0)
     entry.connect("changed", self.on_page_changed_event)
     hbox.add(entry)
 
-    coordinate_hbox.add(gtk.VSeparator())
+    self.coordinate_hbox.add(gtk.VSeparator())
 
-    w=self.projectdata.lwidth
-    h=self.projectdata.lheight
-    self.spb=SpinButtonForBarOnLayout(max(w,h),0,0)
     hbox=gtk.HBox()
     self.coordinate_hbox.add(hbox)
     label=gtk.Label()
     hbox.add(label)
-    label.set_markup("value: ")
+    label.set_markup("Forcused grid: ")
+    adj = gtk.Adjustment(value=p, lower=0,upper=-1, step_incr=-1)
+    entry=gtk.SpinButton(adj, 0, 0)
+    hbox.add(entry)
+
+    hbox=gtk.HBox()
+    self.coordinate_hbox.add(hbox)
+    label=gtk.Label()
+    hbox.add(label)
+    label.set_markup("Value: ")
+    w=self.projectdata.lwidth
+    h=self.projectdata.lheight
+    self.spb=SpinButtonForBarOnLayout(max(w,h),0,0,adj,entry)
     hbox.add(self.spb)
+    self.spb.connect("changed", self.spb.move_bar_on_changed)
+    entry.connect("changed", self.spb.set_current_bar_on_changed)
 
     coordinate_hbox.add(gtk.VSeparator())
   
     hbox = gtk.HButtonBox()
     coordinate_hbox.add(hbox)
-    hbox.set_layout(gtk.BUTTONBOX_END)
-
+#    hbox.set_layout(gtk.BUTTONBOX_END)
+    hbox.set_layout(gtk.BUTTONBOX_CENTER)
+    
     combobox = gtk.combo_box_new_text()
     hbox.add(combobox)
     combobox.append_text("---")
-    combobox.append_text(" | ")#####@@@@@
+    combobox.append_text(" | ")
     combobox.connect('changed', self.toggle_ruler_direction_onchange)
     self.new_ruler_will_be_horizontal=True
     combobox.set_active(0)
@@ -1598,6 +1647,8 @@ class LayoutOverBoxesWithHoganArea:
     hbox.add(button)
     self.button_edit=button
     button.connect('clicked', self.add_new_ruler_onclick)
+
+    self.coordinate_hbox.add(gtk.VSeparator())
 
     self.rulers=[]
 
@@ -1836,7 +1887,6 @@ class AFMMainArea:
     hbbox.show_all()
 
     self.box.show_all()
-    
     self.open_preview_dialog()
     
   def open_preview_dialog(self):
