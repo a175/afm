@@ -458,14 +458,13 @@ class applicationFormData:
 
 \begin{document}
 '''
-
-    for i,pagei in enumerate(self.page):
+    for i in self.projectdata.get_pages_with_boxdata():
       r=r+"\n% page"+str(i+1)+"\n"
       r=r+r'\begin{'
       r=r+self.pagename_frontend(i)
       r=r+r'}'
       r=r+"\n"
-      for boxdata in pagei:
+      for boxdata in self.projectdata.x_boxdata_in_the_page(i):
         r=r+"\n"+self.form_sample(boxdata)
       r=r+"\n"+r'\end{'
       r=r+self.pagename_frontend(i)
@@ -473,7 +472,6 @@ class applicationFormData:
       r=r+"\n\n"
     r=r+r'\end{document}'
     return r
-
 
 #####################################################
 
@@ -490,7 +488,12 @@ class GridData:
     self.value=value
     self.is_horizontal=is_horizontal
 
-  
+  def dump_as_(self):
+    self.id
+    self.page
+    self.value
+    self.is_horizontal
+    
 class BoxData:
   serialnum=0
   VALIGN_TOP=1
@@ -525,10 +528,14 @@ class BoxData:
     bd.type=self.type
     return bd
 
-  def __init__(self,page,x1,x2,y1,y2):
-    self.id=self.int2alphabet(BoxData.serialnum)
-    BoxData.serialnum=BoxData.serialnum+1
 
+  def __init__(self,page,x1,x2,y1,y2,id=None):
+    if id==None:
+      self.id=self.int2alphabet(BoxData.serialnum)
+      BoxData.serialnum=BoxData.serialnum+1
+    else:
+      self.id=id
+      BoxData.serialnum=max(BoxData.serialnum,id)+1
     self.x_1=x1
     self.x_2=x2
     self.y_1=y1
@@ -541,7 +548,19 @@ class BoxData:
     self.halign=1
     self.type=0
 
-
+  def dump_as_(self):
+    self.id
+    self.x_1
+    self.x_2
+    self.y_1
+    self.y_2
+    self.name
+    self.sampletext
+    self.page
+    self.valign
+    self.halign
+    self.type
+    
 
 class BoxDataEntryArea:
   COMBO_VALIGN=[("top",BoxData.VALIGN_TOP),("center",BoxData.VALIGN_CENTER),("bottom",BoxData.VALIGN_BOTTOM)]
@@ -585,13 +604,11 @@ class BoxDataEntryArea:
     sw = gtk.ScrolledWindow()
     sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
     sw.add(entry) 
-#    table.attach(entry,2,3,3,4)
     table.attach(sw,2,3,3,4)
 
     label=gtk.Label()
     label.set_markup("virtical align")
     table.attach(label,1,2,4,5)
-#    entry=gtk.Entry()
     combobox = gtk.combo_box_new_text()
     for i,(text,v) in enumerate(self.COMBO_VALIGN):
       combobox.append_text(text)
@@ -668,52 +685,10 @@ class BoxDataEntryArea:
     self.entry_y2=entry
     table.attach(entry,2,3,11,12)
 
-
-#    hbox = gtk.HButtonBox() 
-#    table.attach(hbox,2,3,12,13)
-#    hbox.set_layout(gtk.BUTTONBOX_END)
-#    button = gtk.Button(stock=gtk.STOCK_EDIT)
-#    hbox.add(button)
-#    self.button_edit=button
-#    button.connect('clicked', self.on_click_edit_coordinates)
-
     self.set_editable_all(True)
 
     vbox.show_all()
 
-#  def on_click_edit_coordinates(self,widget):
-#    (xx,yy,p)=self.get_coordinates()
-#    xx=[xx[0],xx[0]+xx[1]]
-#    yy=[yy[0],yy[0]+yy[1]]
-#    dialog = RulerDialog("select coordinate",None,
-#                        gtk.DIALOG_MODAL,
-#                        (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-#                         gtk.STOCK_OK, gtk.RESPONSE_ACCEPT),
-#                         self.projectdata,
-#                         [True,False],[True,False],xx,yy,p)
-    
-#    r = dialog.run()
-#    self.projectdata.set_default_dialog_size(dialog.get_size())
-
-#    if r==gtk.RESPONSE_ACCEPT:
-#      self.set_coordinates(dialog.get_coordinates())
-#    dialog.destroy()
-#  def set_coordinates(self,coord):
-#    xx,yy,p=coord
-#    xx.sort()
-#    yy.sort()
-#    self.entry_page.set_value(p)
-#    self.entry_x.set_value(xx[0])
-#    self.entry_y.set_value(yy[0])
-#    self.entry_width.set_value(xx[1]-xx[0])
-#    self.entry_height.set_value(yy[1]-yy[0])
-#  def get_coordinates(self):
-#    p=self.entry_page.get_value_as_int()
-#    x1=self.entry_x.get_value_as_int()
-#    y1=self.entry_y.get_value_as_int()
-#    x2=self.entry_width.get_value_as_int()
-#    y2=self.entry_height.get_value_as_int()
-#    return ([x1,x2],[y1,y2],p)
   def get_box(self):
     return self.vbox
 
@@ -862,16 +837,6 @@ class BoxDataListArea:
     button = gtk.Button(stock=gtk.STOCK_EDIT)
     hbox.add(button)
     self.button_edit=button
-#    button.connect('clicked', self.edit_selected)
-
-#    button = gtk.Button(stock=gtk.STOCK_COPY)
-#    hbox.add(button)
-#    self.button_copy=button
-#    button.connect('clicked', self.edit_selected)
-
-#    button = gtk.Button(stock=gtk.STOCK_PASTE)
-#    hbox.add(button)
-#    self.button_paste=button
 #    button.connect('clicked', self.edit_selected)
 
     vbox.show_all()
@@ -1399,20 +1364,6 @@ class BoxDataDialog(gtk.Dialog):
   def get_boxdata(self):
     return self.area.update_and_get_boxdata()
 
-# class RulerDialog(gtk.Dialog):
-#   def __init__(self,title=None, parent=None, flags=0, buttons=None,projectdata=None,xrulers_lr=[],yrulers_ud=[],xx=[],yy=[],p=0):
-#     gtk.Dialog.__init__(self,title,parent,flags,buttons)
-#     self.area=LayoutOverBoxesWithRulersArea(projectdata,xrulers_lr,yrulers_ud,xx,yy,p)
-#     self.vbox.pack_start(self.area.get_box())
-#     (w,h)=projectdata.get_default_dialog_size()
-#     self.resize(w,h)
-
-#   def get_coordinates(self):
-#     return self.area.get_coordinates()
-
-#   def refresh_preview(self):
-#     if self.area:
-#       self.area.refresh_preview()
 
 class HoganDialog(gtk.Dialog):
   def __init__(self,title=None, parent=None, flags=0, buttons=None, projectdata=None,p=0):
@@ -1429,133 +1380,6 @@ class HoganDialog(gtk.Dialog):
     if self.area:
       self.area.refresh_preview()
 
-
-# class LayoutOverBoxesWithRulersArea:
-#   HEIGHT = 600
-#   WIDTH = 600
-
-#   def __init__(self,projectdata,x_rulers_lr,y_rulers_ud,xx,yy,p):
-#     self.projectdata=projectdata
-#     box = gtk.VBox(False,0)
-#     box.show()
-#     table = gtk.Table(2, 2, False)
-#     table.show()
-#     box.pack_start(table, True, True, 0)
-#     layout = LayoutOverBoxes(self.projectdata)
-#     self.layout = layout
-#     self.layout.set_page(p)
-
-#     layout.set_size(self.projectdata.lwidth, self.projectdata.lheight)
-#     layout.connect("size-allocate", self.layout_resize)
-#     layout.show()
-#     table.attach(layout, 0, 1, 0, 1, gtk.FILL|gtk.EXPAND,
-#                  gtk.FILL|gtk.EXPAND, 0, 0)
-#     vScrollbar = gtk.VScrollbar(None)
-#     vScrollbar.show()
-#     table.attach(vScrollbar, 1, 2, 0, 1, gtk.FILL|gtk.SHRINK,
-#                  gtk.FILL|gtk.SHRINK, 0, 0)
-#     hScrollbar = gtk.HScrollbar(None)
-#     hScrollbar.show()
-#     table.attach(hScrollbar, 0, 1, 1, 2, gtk.FILL|gtk.SHRINK,
-#                  gtk.FILL|gtk.SHRINK,
-#                  0, 0)	
-#     vAdjust = layout.get_vadjustment()
-#     vScrollbar.set_adjustment(vAdjust)
-#     hAdjust = layout.get_hadjustment()
-#     hScrollbar.set_adjustment(hAdjust)
-    
-#     coordinate_hbox=gtk.HBox(spacing=20)
-
-#     hbox=gtk.HBox()
-#     coordinate_hbox.add(hbox)
-#     label=gtk.Label()
-#     hbox.add(label)
-#     label.set_markup("page: ")
-#     adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.n_pages-1, step_incr=-1)
-#     entry=gtk.SpinButton(adj, 0, 0)
-#     entry.connect("changed", self.on_page_changed_event)
-#     hbox.add(entry)
-
-
-
-#     max_x=self.projectdata.lwidth
-#     max_y=self.projectdata.lheight
-
-#     self.x_rulers=[]
-#     if x_rulers_lr != []:
-#       hbox=gtk.HBox()
-#       coordinate_hbox.add(hbox)
-
-#       label=gtk.Label()
-#       hbox.add(label)
-#       label.set_markup("x: ")
-#       for ruler_i_is_left in x_rulers_lr:
-#         if ruler_i_is_left:
-#           bar=BarOnLayout(3,max_x,max_y)
-#         else:
-#           bar=BarOnLayout(2,max_x,max_y)
-#         self.x_rulers.append(bar)
-#         bar.show()
-#         self.layout.add(bar)
-
-        
-#         hbox.add(bar.get_spinbutton())
-
-
-#     self.y_rulers=[]
-#     if y_rulers_ud != []:
-#       hbox=gtk.HBox()
-#       coordinate_hbox.add(hbox)
-
-#       label=gtk.Label()
-#       hbox.add(label)
-#       label.set_markup("y: ")
-#       for ruler_i_is_down in y_rulers_ud:
-#         if ruler_i_is_down:
-#           bar=BarOnLayout(1,max_x,max_y)
-#         else:
-#           bar=BarOnLayout(0,max_x,max_y)
-#         self.y_rulers.append(bar)
-#         bar.show()
-#         self.layout.add(bar)
-#         hbox.add(bar.get_spinbutton())
-
-#     coordinate_hbox.show_all()
-#     box.pack_start(coordinate_hbox, False, False, 0)
-
-    
-#     self.move_rulers(xx,yy)
-
-#     hbox=gtk.HBox()
-#     hbox.add(box)
-#     hbox.show_all()
-#     self.box=hbox
-
-#   def refresh_preview(self):
-#     self.layout.refresh_preview()
-
-#   def get_box(self):
-#     return self.box
-
-#   def move_rulers(self,xx,yy):
-#     for (ruler,xi) in zip(self.x_rulers,xx):
-#       ruler.move_to(xi,0)
-#     for (ruler,yi) in zip(self.y_rulers,yy):
-#       ruler.move_to(0,yi)
-
-#   def layout_resize(self, widget, event):
-#     x, y, width, height = widget.get_allocation()
-#     if width > self.projectdata.lwidth or height > self.projectdata.lheight:
-#       lwidth = max(width, self.projectdata.lwidth)
-#       lheight = max(height, self.projectdata.lheight)
-#       widget.set_size(lwidth, lheight)
-
-#   def on_page_changed_event(self,widget):
-#     self.layout.set_page(get_int_from_spinbutton(widget))
-
-
-#  def get_coordinates(self):
-#    return ([ruler.x for ruler in self.x_rulers],[ruler.y for ruler in self.y_rulers],self.layout.page)
 
 class LayoutOverBoxesWithHoganArea:
   HEIGHT = 600
@@ -1636,7 +1460,6 @@ class LayoutOverBoxesWithHoganArea:
   
     hbox = gtk.HButtonBox()
     coordinate_hbox.add(hbox)
-#    hbox.set_layout(gtk.BUTTONBOX_END)
     hbox.set_layout(gtk.BUTTONBOX_CENTER)
     
     combobox = gtk.combo_box_new_text()
@@ -1666,7 +1489,6 @@ class LayoutOverBoxesWithHoganArea:
 
     for griddata in self.projectdata.grids:
       self.add_ruler(griddata)
-#      self.spb.set_value(0)
       
   def add_ruler(self,griddata):
     w=self.projectdata.lwidth
@@ -1739,7 +1561,6 @@ class ProjectData:
       (self.destdir,self.bgimagepath)=os.path.split(path)
       basefilename=os.path.splitext(self.bgimagepath)[0]
       self.stylename=basefilename
-#      self.samplepath=basefilename+".tex"
       self.samplepath="sample.tex"
       self.samplebase="sample"
     else:
@@ -1772,7 +1593,7 @@ class ProjectData:
     self.grids=[]
     self.set_default_dialog_size((self.lwidth,self.lheight))
 
-
+    
   def get_pages_with_boxdata(self):
     pages=list(set([boxdata.page for boxdata in self.boxes]))
     pages.sort()
@@ -1867,11 +1688,18 @@ class ProjectData:
   def set_default_dialog_size(self,s):
     self.dialogsize=s
 
+  def dump_as_(self):
+    self.bgimagepath
+    for box in self.boxes:
+      box.dump_as_()
+    for grid in self.grids:
+      grid.dump_as_()
+
+
 class AFMMainArea:
   def __init__(self,projectdata):
     self.projectdata=projectdata
-    self.my_clip_board=((0,0),[])
-    
+    self.preview=None    
     self.box=gtk.VBox()
     listarea=BoxDataListArea(self)
     self.box.pack_start(listarea.get_vbox())
@@ -1880,8 +1708,6 @@ class AFMMainArea:
     button_new.connect('clicked', self.on_click_new)
     button_remove.connect('clicked', self.on_click_remove)
     button_edit.connect('clicked', self.on_click_edit)
-#    button_copy.connect('clicked', self.on_click_copy)
-#    button_paste.connect('clicked', self.on_click_paste)
 
     hbbox = gtk.HButtonBox()
     listarea.get_buttonbox().pack_start(hbbox,expand=False, fill=False)
@@ -1904,9 +1730,8 @@ class AFMMainArea:
     hbbox.show_all()
 
     self.box.show_all()
-    
-    self.preview=None
-#    self.open_preview_dialog()
+
+
     
   def open_preview_dialog(self):
     dialog=HoganDialog("Preview",None,
@@ -2043,7 +1868,6 @@ class AFMMainArea:
       model.remove(itera)
 
   def on_click_edit(self,widget):
-#    (model,itera,boxid)=self.listarea.get_selected_id()
     (model,iteralist,boxids)=self.listarea.get_selected_ids()
     if not boxids:
       return
@@ -2061,75 +1885,6 @@ class AFMMainArea:
 
         model.remove(itera)
         self.listarea.append_boxdata(boxdata)
-
-
-  # def on_click_copy(self,widget):
-  #   (model,iteralist,boxids)=self.listarea.get_selected_ids()
-  #   if not boxids:
-  #     return
-  #   boxdata=[]
-  #   for (itera,boxid,) in zip(iteralist,boxids):
-  #     if boxid:
-  #       b=self.projectdata.get_boxdata_by_id(boxid)
-  #       if b:
-  #         boxdata.append(b)
-  #   if boxdata==[]:
-  #     return
-  #   dialog=gtk.MessageDialog(type=gtk.MESSAGE_INFO,buttons = gtk.BUTTONS_OK_CANCEL,message_format="To copy selected box(es), choose the base point of the box(es).")
-  #   r=dialog.run()
-  #   if r == gtk.RESPONSE_OK:
-  #     xx=[boxdata[0].x]
-  #     yy=[boxdata[0].y]
-  #     p=boxdata[0].page
-  #     rulerdialog = RulerDialog("Choose the base point",None,
-  #                       gtk.DIALOG_MODAL,
-  #                       (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-  #                        gtk.STOCK_OK, gtk.RESPONSE_ACCEPT),
-  #                        self.projectdata,
-  #                        [True],[True],xx,yy,p)
-
-  #     r2 = rulerdialog.run()
-  #     self.projectdata.set_default_dialog_size(rulerdialog.get_size())
-  #     if r2==gtk.RESPONSE_ACCEPT:
-  #       self.my_clip_borad=(rulerdialog.get_coordinates(),boxdata)
-  #     rulerdialog.destroy()
-  #   else:
-  #     pass
-  #   dialog.destroy()
-
-  # def on_click_paste(self,widget):
-  #   (base,boxdata)=self.my_clip_borad
-  #   if not base:
-  #     return 
-  #   (xx,yy,p)=base
-  #   dialog=gtk.MessageDialog(type=gtk.MESSAGE_INFO,buttons = gtk.BUTTONS_OK_CANCEL,message_format="Choose the base point to paste.")
-  #   r=dialog.run()
-  #   if r == gtk.RESPONSE_OK:
-  #     rulerdialog = RulerDialog("Choose the base point",None,
-  #                       gtk.DIALOG_MODAL,
-  #                       (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-  #                        gtk.STOCK_OK, gtk.RESPONSE_ACCEPT),
-  #                        self.projectdata,
-  #                        [True],[True],xx,yy,p)
-  #     r2 = rulerdialog.run()
-  #     self.projectdata.set_default_dialog_size(rulerdialog.get_size())
-  #     if r2==gtk.RESPONSE_ACCEPT:
-  #       destbase=rulerdialog.get_coordinates()
-  #       rulerdialog.destroy()
-  #       (dxx,dyy,dp)=destbase
-  #       dx=dxx[0]-xx[0]
-  #       dy=dyy[0]-yy[0]
-  #       for bi in boxdata:
-  #         bbi=bi.get_similar_boxdata()
-  #         bbi.x=bbi.x+dx
-  #         bbi.y=bbi.y+dy
-  #         self.conform_and_add(bbi)
-  #     else:
-  #       rulerdialog.destroy()
-  #   else:
-  #     pass
-  #   dialog.destroy()
-
 
   def get_boxdata_by_dialog(self,boxdata,title,message):
     dialog=BoxDataDialog(title,None,
@@ -2166,7 +1921,7 @@ class Afmmain:
     self.window.set_default_size(360, 300)
     self.window.connect("destroy", lambda w: gtk.main_quit())
     self.window.show()
-    layout = AFMMainArea(ProjectData(uri))
+    layout = AFMMainArea(self.projectdata)
     self.window.add(layout.get_box())
 
   def get_uri_of_base_pdf_by_dialog(self):
