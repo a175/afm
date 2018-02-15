@@ -496,7 +496,9 @@ class GridData:
     d["value"]=self.value
     d["is_horizontal"]=self.is_horizontal
     return d
-  
+  @classmethod
+  def construct_from_dictionary(cls,d):
+    return GridData(d["page"], d["value"],d["is_horizontal"],d["id"])
 class BoxData:
   serialnum=0
   VALIGN_TOP=1
@@ -565,7 +567,16 @@ class BoxData:
     d["halign"]=self.halign
     d["type"]=self.type
     return d
-
+  @classmethod
+  def construct_from_dictionary(cls,d):
+    r=BoxData(d["page"],d["x_1"],d["x_2"],d["y_1"],d["y_2"],d["id"])
+    r.name=d["name"]
+    r.sampletext=d["sampletext"]
+    r.valign=d["valign"]
+    r.halign=d["halign"]
+    r.type=d["type"]
+    return r
+  
 class BoxDataEntryArea:
   COMBO_VALIGN=[("top",BoxData.VALIGN_TOP),("center",BoxData.VALIGN_CENTER),("bottom",BoxData.VALIGN_BOTTOM)]
   COMBO_HALIGN=[("left",BoxData.HALIGN_LEFT),("center",BoxData.HALIGN_CENTER),("right",BoxData.HALIGN_RIGHT)]
@@ -1554,34 +1565,68 @@ class ProjectData:
   HEIGHT = 600
   WIDTH = 600
   DEFAULT_SAMPLE_BASE="sample"
-  DEFAULT_JSON_PATH="projectdata.json"
+  DEFAULT_JSON_BASE="projectdata"
+  DEFAULT_JSON_EXT=".json"
   DEFAULT_MAKEFILE_PATH="Makefile"
-  
+
   def __init__(self,uri):
-    self.set_path_and_document(uri)
+    p=urlparse.urlparse(uri)
+    path=urllib.unquote(p.path)
+    (self.destdir,filename)=os.path.split(path)
+    (base,ext)=os.path.splitext(filename)
     
-  def set_path_and_document(self,uri):    
+    if ext==self.DEFAULT_JSON_EXT:
+      f = open(path)
+      prev_proj= json.load(f)
+      self.bgimagepath=prev_proj["bgimagepath"]
+      self.bgimagefullpath=os.path.join(self.destdir,self.bgimagepath)
+      prev_proj["pdfuri"]='file://'+urllib.pathname2url(self.bgimagefullpath)
+    else:
+      self.bgimagefullpath=path
+      self.bgimagepath=filename
+      prev_proj={}
+      prev_proj["pdfuri"]=uri
+    self.set_document(prev_proj["pdfuri"])
+    
+    if "stylename" in prev_proj:
+      self.stylename=prev_proj["stylename"]
+    else:
+      self.stylename=base
+    if "samplebase" in prev_proj:
+      self.samplebase=prev_proj["samplebase"]
+    else:
+      self.samplebase=self.DEFAULT_SAMPLE_BASE
+    if "makefilepath" in prev_proj:
+      self.makefilepath=prev_proj["makefilepath"]
+    else:
+      self.makefilepath=self.DEFAULT_MAKEFILE_PATH
+    if "jsonpath" in prev_proj:
+      self.jsonpath=prev_proj["jsonpath"]
+    else:
+      self.jsonpath=self.DEFAULT_JSON_BASE+self.DEFAULT_JSON_EXT
+
+    self.samplepath=self.samplebase+".tex"  
+
+    if "boxes" in prev_proj:
+      self.boxes=[BoxData.construct_from_dictionary(d) for d in prev_proj["boxes"]]
+    else:
+      self.boxes=[]
+    if "grids" in prev_proj:
+      self.grids=[GridData.construct_from_dictionary(d) for d in prev_proj["grids"]]
+    else:
+      self.grids=[]
+    
+
+  def set_document(self,uri):    
+    self.boundingboxes=[]
     if uri:
       self.document = poppler.document_new_from_file(uri,None)
-      p=urlparse.urlparse(uri)
-      path=urllib.unquote(p.path)
-      self.bgimagefullpath=path
-      (self.destdir,self.bgimagepath)=os.path.split(path)
-      basefilename=os.path.splitext(self.bgimagepath)[0]
-      self.stylename=basefilename
-      self.samplebase=self.DEFAULT_SAMPLE_BASE
-      self.samplepath=self.samplebase+".tex"
-      self.jsonpath=self.DEFAULT_JSON_PATH
-      self.makefilepath=self.DEFAULT_MAKEFILE_PATH
-
     else:
       self.document=None
-    self.boundingboxes=[]
     if self.document:
       self.n_pages = self.document.get_n_pages()
       width = 0
-      height = 0
-    
+      height = 0    
       self.pages=[ None for i in range(self.n_pages)]
       for i in range(self.n_pages):
         (w,h) =self.document.get_page(i).get_size()
@@ -1598,10 +1643,6 @@ class ProjectData:
       self.n_pages=10000
       self.lwidth = self.WIDTH
       self.lheight = self.HEIGHT
-
-
-    self.boxes=[]
-    self.grids=[]
     self.set_default_dialog_size((self.lwidth,self.lheight))
 
     
@@ -1709,14 +1750,15 @@ class ProjectData:
     d["bgimagepath"]=self.bgimagepath
     d["stylename"]=self.stylename
     d["samplebase"]=self.samplebase
+    d["makefilepath"]=self.makefilepath
     d["jsonpath"]=self.jsonpath
-    d["bixes"]=[box.dump_as_() for box in self.boxes]
-    d["grids"]=[grid.dump_as_() for grid in self.grids]
+    d["boxes"]=[box.dump_as_dictionary() for box in self.boxes]
+    d["grids"]=[grid.dump_as_dictionary() for grid in self.grids]
     return d
   
   def dump_as_json(self):
-    d=dump_as_dictionary()
-    return json.dumps(d)
+    d=self.dump_as_dictionary()
+    return json.dumps(d,indent=2)
     
 class AFMMainArea:
   def __init__(self,projectdata):
@@ -1980,6 +2022,12 @@ if __name__ == "__main__":
     filter.add_pattern("*.pdf")
     dialog.add_filter(filter)
     filter = gtk.FileFilter()
+    filter.set_name("project JSON files")
+    filter.add_mime_type("application/json")
+    filter.add_mime_type("application/x-json")
+    filter.add_pattern("*"+ProjectData.DEFAULT_JSON_EXT)
+    dialog.add_filter(filter)
+    filter = gtk.FileFilter()
     filter.set_name("All files")
     filter.add_pattern("*")
     dialog.add_filter(filter)
@@ -1987,7 +2035,6 @@ if __name__ == "__main__":
     r = dialog.run()
     if r==gtk.RESPONSE_ACCEPT:
       uri=dialog.get_uri()
-      print uri
       dialog.destroy()
     else:
       dialog.destroy()
