@@ -13,6 +13,7 @@ import os.path
 import os
 import urllib
 import urlparse
+import json
 
 def get_int_from_spinbutton(spinbutton):
   if spinbutton.get_text():
@@ -488,12 +489,14 @@ class GridData:
     self.value=value
     self.is_horizontal=is_horizontal
 
-  def dump_as_(self):
-    self.id
-    self.page
-    self.value
-    self.is_horizontal
-    
+  def dump_as_dictionary(self):
+    d={}
+    d["id"]=self.id
+    d["page"]=self.page
+    d["value"]=self.value
+    d["is_horizontal"]=self.is_horizontal
+    return d
+  
 class BoxData:
   serialnum=0
   VALIGN_TOP=1
@@ -548,19 +551,20 @@ class BoxData:
     self.halign=1
     self.type=0
 
-  def dump_as_(self):
-    self.id
-    self.x_1
-    self.x_2
-    self.y_1
-    self.y_2
-    self.name
-    self.sampletext
-    self.page
-    self.valign
-    self.halign
-    self.type
-    
+  def dump_as_dictionary(self):
+    d={}
+    d["id"]=self.id
+    d["x_1"]=self.x_1
+    d["x_2"]=self.x_2
+    d["y_1"]=self.y_1
+    d["y_2"]=self.y_2
+    d["name"]=self.name
+    d["sampletext"]=self.sampletext
+    d["page"]=self.page
+    d["valign"]=self.valign
+    d["halign"]=self.halign
+    d["type"]=self.type
+    return d
 
 class BoxDataEntryArea:
   COMBO_VALIGN=[("top",BoxData.VALIGN_TOP),("center",BoxData.VALIGN_CENTER),("bottom",BoxData.VALIGN_BOTTOM)]
@@ -1549,6 +1553,10 @@ class LayoutOverBoxesWithHoganArea:
 class ProjectData:
   HEIGHT = 600
   WIDTH = 600
+  DEFAULT_SAMPLE_BASE="sample"
+  DEFAULT_JSON_PATH="projectdata.json"
+  DEFAULT_MAKEFILE_PATH="Makefile"
+  
   def __init__(self,uri):
     self.set_path_and_document(uri)
     
@@ -1561,8 +1569,11 @@ class ProjectData:
       (self.destdir,self.bgimagepath)=os.path.split(path)
       basefilename=os.path.splitext(self.bgimagepath)[0]
       self.stylename=basefilename
-      self.samplepath="sample.tex"
-      self.samplebase="sample"
+      self.samplebase=self.DEFAULT_SAMPLE_BASE
+      self.samplepath=self.samplebase+".tex"
+      self.jsonpath=self.DEFAULT_JSON_PATH
+      self.makefilepath=self.DEFAULT_MAKEFILE_PATH
+
     else:
       self.document=None
     self.boundingboxes=[]
@@ -1672,10 +1683,15 @@ class ProjectData:
     destzip.writestr(inf,afd.get_sample_code(self.stylename))
 
     print "writing Makefile...."
-    makefilepath=os.path.join(rootdir,"Makefile")
+    makefilepath=os.path.join(rootdir,self.makefilepath)
     inf=zipfile.ZipInfo(makefilepath)
     destzip.writestr(inf,afd.get_sample_makefile(self.samplebase))
 
+    print "writing this project data...."
+    jsonfilepath=os.path.join(rootdir,self.jsonpath)
+    inf=zipfile.ZipInfo(jsonfilepath)
+    destzip.writestr(inf,self.dump_as_json())
+    
     for inf in destzip.infolist():
       inf.external_attr = 0755 << 16L
       inf.create_system = 0
@@ -1688,14 +1704,20 @@ class ProjectData:
   def set_default_dialog_size(self,s):
     self.dialogsize=s
 
-  def dump_as_(self):
-    self.bgimagepath
-    for box in self.boxes:
-      box.dump_as_()
-    for grid in self.grids:
-      grid.dump_as_()
-
-
+  def dump_as_dictionary(self):
+    d={}
+    d["bgimagepath"]=self.bgimagepath
+    d["stylename"]=self.stylename
+    d["samplebase"]=self.samplebase
+    d["jsonpath"]=self.jsonpath
+    d["bixes"]=[box.dump_as_() for box in self.boxes]
+    d["grids"]=[grid.dump_as_() for grid in self.grids]
+    return d
+  
+  def dump_as_json(self):
+    d=dump_as_dictionary()
+    return json.dumps(d)
+    
 class AFMMainArea:
   def __init__(self,projectdata):
     self.projectdata=projectdata
