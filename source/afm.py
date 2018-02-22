@@ -39,12 +39,8 @@ class applicationFormData:
     self.UNITLENGTH=1.0
     self.XMARGIN=1.0
     self.YMARGIN=1.0
-    self.PREFIX_ENVAT=""
-    self.SUFFIX_ENVAT="@env@nu"
-    self.PREFIX_COMAT=""
-    self.SUFFIX_COMAT="@com@nu"
-    self.PREFIX_BASEAT=""
-    self.SUFFIX_BASEAT="@@nu"    
+    self.PREFIX_SETVARAT="@set@temp@vars"
+    self.SUFFIX_SETVARAT="@nu"
     self.PREFIX_ROUNDRECTANGLEAT=""
     self.SUFFIX_ROUNDRECTANGLEAT="@roundrectangle@nu"
     self.bgfilename=self.projectdata.bgimagepath
@@ -60,35 +56,11 @@ class applicationFormData:
     return self.dtppt2texpt(dtp_pt)/self.UNITLENGTH
   def dtppt2unitlength_as_str(self,dtp_pt):
     return str(self.dtppt2unitlength(dtp_pt))
-  def envATname(self,name):
-    return self.PREFIX_ENVAT+name+self.SUFFIX_ENVAT
-  def comATname(self,name):
-    return "\\"+self.PREFIX_COMAT+name+self.SUFFIX_COMAT
-  def baseATname(self,name):
-    return "\\"+self.PREFIX_BASEAT+name+self.SUFFIX_BASEAT    
+  def setvarATname(self,name):
+    return "\\"+self.PREFIX_SETVARAT+name+self.SUFFIX_SETVARAT
   def roundrectangleATname(self,name):
-    return "\\"+self.PREFIX_BASEAT+name+self.SUFFIX_ROUNDRECTANGLEAT    
-  def env_minipage(self,boxdata):
-    (x1,x2,w,y1,y2,h)=self.projectdata.get_box_coordinate(boxdata)
-    width=self.dtppt2unitlength_as_str(w)
-    begin_minipage=r'\begin{minipage}[c]{'+width+r'\unitlength}'
-    end_minipage=r'\end{minipage}'
-    if boxdata.halign==BoxData.HALIGN_RIGHT:
-      begin_minipage=begin_minipage+r'\begin{flushright}'      
-      end_minipage=r'\end{flushright}'+end_minipage      
-    elif boxdata.halign==BoxData.HALIGN_CENTER:
-      begin_minipage=begin_minipage+r'\begin{center}'      
-      end_minipage=r'\end{center}'+end_minipage      
-    return (begin_minipage,end_minipage)    
-  def com_makebox(self,boxdata):
-    r=r'\makebox(0,0)'
-    if boxdata.valign==BoxData.VALIGN_BOTTOM:
-      r=r+'[bl]'
-    elif boxdata.valign==BoxData.VALIGN_TOP:
-      r=r+'[tl]'
-    else:
-      r=r+'[l]'
-    return r
+    return "\\"+self.PREFIX_ROUNDRECTANGLEAT+name+self.SUFFIX_ROUNDRECTANGLEAT    
+
   def form_sample(self,boxdata):
     r=""
     if boxdata.type==BoxData.TYPE_ENVIRONMENT:
@@ -117,28 +89,71 @@ class applicationFormData:
       r=r +'\\'
       r=r + boxdata.name
     return r
+
   def formfrontenddef(self,boxdata):
-    (x1,x2,w,y1,y2,h)=self.projectdata.get_box_coordinate(boxdata)
     r=""
-    if boxdata.type!=BoxData.TYPE_ENVIRONMENT:
-      r=r+"% "
+    if boxdata.type!=BoxData.TYPE_ENVIRONMENT or boxdata.halign==BoxData.HALIGN_RIGHT or boxdata.halign==BoxData.HALIGN_CENTER:
+      r=r+"\n% "
+    else:
+      r=r+"\n"
     r=r +r'\newenvironment{'
     r=r + boxdata.name
-    r=r +r'}{\begin{'
-    r=r + self.envATname(boxdata.name)
-    r=r +r'}}{\end{'
-    r=r + self.envATname(boxdata.name)
-    r=r +r'}}'
+    r=r +r'}{'
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'\begin{put@@box@env@nu}}{\end{put@@box@env@nu}}'
+    if boxdata.type!=BoxData.TYPE_ENVIRONMENT or boxdata.halign!=BoxData.HALIGN_RIGHT:
+      r=r+"\n% "
+    else:
+      r=r+"\n"
 
-    if boxdata.type!=BoxData.TYPE_COMMAND:
+    r=r +r'\newenvironment{'
+    r=r + boxdata.name
+    r=r +r'}{'
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'\begin{put@@box@env@nu}\begin{flushright}}{\end{flushright}\end{put@@box@env@nu}}'
+
+    if boxdata.type!=BoxData.TYPE_ENVIRONMENT or boxdata.halign!=BoxData.HALIGN_CENTER:
+      r=r+"\n% "
+    else:
+      r=r+"\n"
+    r=r +r'\newenvironment{'
+    r=r + boxdata.name
+    r=r +r'}{'
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'\begin{put@@box@env@nu}\begin{center}}{\end{center}\end{put@@box@env@nu}}'
+
+
+    if boxdata.type!=BoxData.TYPE_COMMAND or boxdata.halign==BoxData.HALIGN_RIGHT or boxdata.halign==BoxData.HALIGN_CENTER:
       r=r+"\n% "
     else:
       r=r+"\n"
     r=r +r'\newcommand{'+"\\"
     r=r + boxdata.name
-    r=r +r'}{'
-    r=r + self.comATname(boxdata.name)
-    r=r +r'}'
+    r=r +r'}[1]{'
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'\put@@box@com@nu{#1}}'
+
+    if boxdata.type!=BoxData.TYPE_COMMAND or boxdata.halign!=BoxData.HALIGN_RIGHT:
+      r=r+"\n% "
+    else:
+      r=r+"\n"
+    r=r +r'\newcommand{'+"\\"
+    r=r + boxdata.name
+    r=r +r'}[1]{'
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'\put@@box@com@nu{\begin{flushright}#1\end{flushright}}}'
+
+
+    if boxdata.type!=BoxData.TYPE_COMMAND or boxdata.halign!=BoxData.HALIGN_CENTER:
+      r=r+"\n% "
+    else:
+      r=r+"\n"
+    r=r +r'\newcommand{'+"\\"
+    r=r + boxdata.name
+    r=r +r'}[1]{'
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'\put@@box@com@nu{\begin{center}#1\end{center}}}'
+
 
     if boxdata.type!=BoxData.TYPE_CHECKMARK:
       r=r+"\n% "
@@ -147,9 +162,10 @@ class applicationFormData:
     r=r +r'\newcommand{'+"\\"
     r=r + boxdata.name
     r=r +r'}{'
-    r=r + self.comATname(boxdata.name)
-    r=r +r'{$\checkmark$}}'
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'\put@@box@checkmark@nu}'
 
+    
     if boxdata.type!=BoxData.TYPE_STRIKE:
       r=r+"\n% "
     else:
@@ -157,21 +173,8 @@ class applicationFormData:
     r=r +r'\newcommand{'+"\\"
     r=r + boxdata.name
     r=r +r'}{'
-    r=r + self.comATname(boxdata.name)
-    r=r +r'{\rule{'
-    r=r + self.dtppt2unitlength_as_str(w)
-    r=r +r'\unitlength}{'
-    r=r + self.dtppt2unitlength_as_str(h/6)
-    r=r +r'\unitlength}\kern -'
-    r=r + self.dtppt2unitlength_as_str(w)
-    r=r +r'\unitlength\rule['
-    r=r + self.dtppt2unitlength_as_str(5*h/6)
-    r=r +r'\unitlength]{'
-    r=r + self.dtppt2unitlength_as_str(w)
-    r=r +r'\unitlength}{'
-    r=r + self.dtppt2unitlength_as_str(h/6)
-    r=r +r'\unitlength}}'
-    r=r +r'}'
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'\put@@box@strike@nu}'
 
 
     if boxdata.type!=BoxData.TYPE_RULE:
@@ -181,13 +184,8 @@ class applicationFormData:
     r=r +r'\newcommand{'+"\\"
     r=r + boxdata.name
     r=r +r'}{'
-    r=r + self.comATname(boxdata.name)
-    r=r +r'{\rule{'
-    r=r + self.dtppt2unitlength_as_str(w)
-    r=r +r'\unitlength}{'
-    r=r + self.dtppt2unitlength_as_str(h)
-    r=r +r'\unitlength}}}'
-
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'\put@@box@rule@nu}'
 
     if boxdata.type!=BoxData.TYPE_CHECK_CIRCLE:
       r=r+"\n% "
@@ -202,7 +200,17 @@ class applicationFormData:
     return r
 
 
+  def com_makebox_pos(self,boxdata):
+    if boxdata.valign==BoxData.VALIGN_BOTTOM:
+      return 'bl'
+    elif boxdata.valign==BoxData.VALIGN_TOP:
+      return 'tl'
+    else:
+      return 'l'
+    return ''
 
+
+  
   def formdef(self,boxdata):
     (x1,x2,w,y1,y2,h)=self.projectdata.get_box_coordinate(boxdata)
     x=self.dtppt2unitlength_as_str(x1-self.XMARGIN)
@@ -214,45 +222,24 @@ class applicationFormData:
       y=-y1
     y=self.dtppt2unitlength_as_str(y+self.YMARGIN)
 
-
-    (begin_minipage,end_minipage)=self.env_minipage(boxdata)
-    com_makebox=self.com_makebox(boxdata)
-    env_at=self.envATname(boxdata.name)
-    com_at=self.comATname(boxdata.name)
-    base_at=self.baseATname(boxdata.name)
-
-    r=""
-    r=r +r'\newenvironment{'
-    r=r + env_at
-    r=r +r'}{\begin{lrbox}{\MyBlackBox@nu}'
-    r=r + begin_minipage
-    r=r +r'}{'
-    r=r + end_minipage
-    r=r +r'\end{lrbox}'
-    r=r + base_at
-    r=r +r'{\usebox{\MyBlackBox@nu}}}'
-    new_env_at=r
+    com_makebox_pos=self.com_makebox_pos(boxdata)
 
     r=""
     r=r +r'\newcommand{'
-    r=r + com_at
-    r=r +r'}[1]{'
-    r=r + base_at
-    r=r +r'{'
-    r=r +begin_minipage+'#1'+end_minipage+'}}'
-    new_com_at=r
-
-    r=""
-    r=r +r'\newcommand{'
-    r=r + base_at
-    r=r +r'}[1]{\put('
+    r=r + self.setvarATname(boxdata.name)
+    r=r +r'}{\set@my@temp@var{'
     r=r + x
-    r=r +r','
+    r=r +r'}{'
     r=r + y
-    r=r +r'){'
-    r=r + com_makebox
-    r=r +r'{{#1}}}}'
-    new_base_at=r
+    r=r +r'}{'
+    r=r + com_makebox_pos
+    r=r +r'}{'
+    r=r + self.dtppt2unitlength_as_str(w)    
+    r=r +r'\unitlength}{'
+    r=r + self.dtppt2unitlength_as_str(h)    
+    r=r +r'\unitlength}}'
+
+    new_setvar_at=r
 
     put_roundrectangle_at=self.roundrectangleATname(boxdata.name)
     midx=self.dtppt2unitlength_as_str(x1+0.5*w-self.XMARGIN)
@@ -269,22 +256,23 @@ class applicationFormData:
     r=""
     r=r +r'\newcommand{'
     r=r + put_roundrectangle_at
-    r=r +r'}{\put('
-    r=r + midx
-    r=r +r','
-    r=r + midy
-    r=r +r'){'
+    r=r +r'}{'
     if round_R <5:
+      r=r +r'\put('
+      r=r + midx
+      r=r +r','
+      r=r + midy
+      r=r +r'){'
       r=r +r'\makebox(0,0)[c]{$\circ$}'
-    else:
-      r=r +r'\roundCorners@nu['
-      r=r + self.dtppt2unitlength_as_str(round_r*2)
-      r=r +r']{'
-      r=r + self.dtppt2unitlength_as_str(round_w)
-      r=r +r'}{'
-      r=r + self.dtppt2unitlength_as_str(round_h)
       r=r +r'}'
-      r=r +r'\boxWithoutCorners@nu{'
+    else:
+      r=r +r'\put@roundCorners@nu{'
+      r=r + midx
+      r=r +r'}{'
+      r=r + midy
+      r=r +r'}{'      
+      r=r + self.dtppt2unitlength_as_str(round_r*2)
+      r=r +r'}{'
       r=r + self.dtppt2unitlength_as_str(round_w)
       r=r +r'}{'
       r=r + self.dtppt2unitlength_as_str(round_h)
@@ -293,9 +281,9 @@ class applicationFormData:
       r=r +r'}{'
       r=r + self.dtppt2unitlength_as_str(round_hr)
       r=r +r'}'
-    r=r +r'}}'
+    r=r +r'}'
     new_roundrectangle_at=r
-    return (new_env_at,new_com_at,new_base_at,new_roundrectangle_at)
+    return (new_setvar_at,new_roundrectangle_at)
 
 
   def page_atfirst(self,n):
@@ -363,6 +351,9 @@ class applicationFormData:
 
   def common_command(self):
     return r'''
+% Redefine \baseuplength if you want to move background image vertically.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{geometry}
 \geometry{ignoreall,scale=1}
@@ -378,7 +369,7 @@ class applicationFormData:
 \ProcessOptions\relax
 
 \if@js@basecls@nu@ 
-\newcommand{\unitlength@nu}{'''+str(self.UNITLENGTH)+r'''turept}
+\newcommand{\unitlength@nu}{'''+str(self.UNITLENGTH)+r'''truept}
 \else 
 \newcommand{\unitlength@nu}{'''+str(self.UNITLENGTH)+r'''pt}
 \fi
@@ -396,12 +387,33 @@ class applicationFormData:
 \setlength\unitlength\unitlength@nu\begin{picture}(0,0)(0,\baseuplength)%
 \put(0,0){\makebox(0,0)[tl]{}}}
 {\end{picture}}
-\newbox{\MyBlackBox@nu}
 
 \newcommand{\roundCorners@nu}[3][20]{\put(#2,#3){\oval(#1,#1)[tr]}\put(-#2,#3){\oval(#1,#1)[tl]}\put(#2,-#3){\oval(#1,#1)[br]}\put(-#2,-#3){\oval(#1,#1)[bl]}}
 \newcommand{\boxWithoutCorners@nu}[4]{\put(0,#4){\line(1,0){#1}}\put(0,#4){\line(-1,0){#1}}\put(0,-#4){\line(1,0){#1}}\put(0,-#4){\line(-1,0){#1}}\put(#3,0){\line(0,1){#2}}\put(#3,0){\line(0,-1){#2}}\put(-#3,0){\line(0,1){#2}}\put(-#3,0){\line(0,-1){#2}}}
-'''
 
+\newcommand{\put@roundCorners@nu}[7]{\put(#1,#2){\roundCorners@nu[#3]{#4}{#5}\boxWithoutCorners@nu{#4}{#5}{#6}{#7}}}
+
+\newcommand{\put@box@@nu}[4][]{\put(#2,#3){\makebox(0,0)[#1]{#4}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\my@temp@var@x}{}
+\newcommand{\my@temp@var@y}{}
+\newcommand{\my@temp@var@p}{}
+\newlength{\my@temp@var@w}
+\newlength{\my@temp@var@h}
+\newbox{\MyBlackBox@nu}
+\newcommand{\set@my@temp@var}[5]{\def\my@temp@var@x{#1}\def\my@temp@var@y{#2}\def\my@temp@var@p{[#3]}\setlength{\my@temp@var@w}{#4}\setlength{\my@temp@var@h}{#5}}
+
+\newenvironment{put@@box@env@nu}{\begin{lrbox}{\MyBlackBox@nu}\begin{minipage}[c]{\my@temp@var@w}}{\end{minipage}\end{lrbox}\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\usebox{\MyBlackBox@nu}}}
+\newcommand{\put@@box@com@nu}[1]{\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\begin{minipage}[c]{\my@temp@var@w}#1\end{minipage}}}
+\newcommand{\put@@box@rule@nu}{\put@@box@com@nu{\rule{\my@temp@var@w}{\my@temp@var@h}}}
+\newcommand{\put@@box@strike@nu}{\put@@box@com@nu{\rule[0.1734\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\kern -\my@temp@var@w\rule[0.6\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\rule{opt}{\my@temp@var@h}}}
+\newcommand{\put@@box@checkmark@nu}{\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\begin{minipage}[c]{\my@temp@var@w}\centering$\checkmark$\end{minipage}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+'''
+  
   def get_style_code(self):
     r="%\n"
     r=r+self.common_command()
@@ -410,8 +422,6 @@ class applicationFormData:
     page_atfirst=""
     page_def=""
     form_front=""
-    form_back=""
-
 
     for i in self.projectdata.get_pages_with_boxdata():
       (fr,no,pdf)=self.pagedef(i)
@@ -419,26 +429,27 @@ class applicationFormData:
       page_atfirst=page_atfirst+"\n"+self.def_page_atfirst(i)
       form_front=form_front+"\n% page "+str(i+1)+" i.e.," +int2alphabet(i)
       for boxdata in self.projectdata.x_boxdata_in_the_page(i):
-        form_back=form_back+"\n\n"+("\n".join(self.formdef(boxdata)))
+        form_front=form_front+"\n\n"+("\n".join(self.formdef(boxdata)))
         form_front=form_front+"\n\n"+self.formfrontenddef(boxdata)
-
-    r=r+"%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+        form_front=form_front+"\n"
+        
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+    r=r+page_def
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     r=r+page_atfirst
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     r=r+form_front
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
-    r=r+page_def
-    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
-    r=r+form_back
-    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     return r
 
 
-  def get_sample_makefile(self,sample_file):
+  def get_sample_makefile(self,sample_file,style_file):
     r="LATEX=latex\nDVI2PDF=dvipdfmx\n"
+    r=r+"STYLEFILE="+style_file+"\n\n"
+    
     r=r+"TEXFILE="+sample_file+"\n\n"
     r=r+"all: pdf\ndvi: ${TEXFILE}.dvi\npdf: ${TEXFILE}.pdf\n\n"
-    r=r+"${TEXFILE}.dvi: ${TEXFILE}.tex\n\t${LATEX} ${TEXFILE} && ${LATEX} ${TEXFILE}\n"
+    r=r+"${TEXFILE}.dvi: ${TEXFILE}.tex ${STYLEFILE}.sty\n\t${LATEX} ${TEXFILE} && ${LATEX} ${TEXFILE}\n"
     r=r+"${TEXFILE}.pdf: ${TEXFILE}.dvi\n\t${DVI2PDF} ${TEXFILE}.dvi\n"
     r=r+"clean:\n\trm -f ${TEXFILE}.dvi ${TEXFILE}.pdf ${TEXFILE}.log ${TEXFILE}.aux texput.log"
     return r
@@ -534,13 +545,14 @@ class BoxData:
     return bd
 
 
-  def __init__(self,page,x1,x2,y1,y2,id=None):
-    if id==None:
-      self.id=self.int2alphabet(BoxData.serialnum)
+  def __init__(self,page,x1,x2,y1,y2,id_as_int=None):
+    if id_as_int==None:
+      self.id_as_int=BoxData.serialnum
       BoxData.serialnum=BoxData.serialnum+1
     else:
-      self.id=id
-      BoxData.serialnum=max(BoxData.serialnum,id)+1
+      self.id_as_int=id_as_int
+      BoxData.serialnum=max(BoxData.serialnum,id_as_int)+1
+    self.id=self.int2alphabet(self.id_as_int)
     self.x_1=x1
     self.x_2=x2
     self.y_1=y1
@@ -555,7 +567,7 @@ class BoxData:
 
   def dump_as_dictionary(self):
     d={}
-    d["id"]=self.id
+    d["id_as_int"]=self.id_as_int
     d["x_1"]=self.x_1
     d["x_2"]=self.x_2
     d["y_1"]=self.y_1
@@ -569,7 +581,7 @@ class BoxData:
     return d
   @classmethod
   def construct_from_dictionary(cls,d):
-    r=BoxData(d["page"],d["x_1"],d["x_2"],d["y_1"],d["y_2"],d["id"])
+    r=BoxData(d["page"],d["x_1"],d["x_2"],d["y_1"],d["y_2"],d["id_as_int"])
     r.name=d["name"]
     r.sampletext=d["sampletext"]
     r.valign=d["valign"]
@@ -855,7 +867,8 @@ class BoxDataListArea:
 #    button.connect('clicked', self.edit_selected)
 
     vbox.show_all()
-    
+    for boxdata in self.parent.projectdata.boxes:
+      self.append_boxdata(boxdata)
   def get_vbox(self):
     return self.vbox
   
@@ -1027,7 +1040,7 @@ class Bar(gtk.DrawingArea):
     self.connect('expose-event', self.on_self_expose_event)
     self.margin=margin
     self.hilight_mode=0
-
+    
   def set_hilight_mode(self,mode):
     self.hilight_mode=mode
     
@@ -1070,6 +1083,7 @@ class Bar(gtk.DrawingArea):
     
   def on_self_expose_event(self, widget, event):
     ctx = widget.window.cairo_create()
+
     if self.direction & BarOnLayout.MASK_VIRTICAL_BAR:
       c = self.get_background_rgba()
       if c != None:
@@ -1190,7 +1204,6 @@ class BarOnLayout(gtk.EventBox):
     self.label=gtk.Label()
     self.label.set_markup(str(self.griddata.id))
     self.label.show()
-
     if direction & self.MASK_VIRTICAL_BAR:
       self.height=max_y
       self.width=self.LINEWIDTH
@@ -1726,7 +1739,7 @@ class ProjectData:
     print "writing Makefile...."
     makefilepath=os.path.join(rootdir,self.makefilepath)
     inf=zipfile.ZipInfo(makefilepath)
-    destzip.writestr(inf,afd.get_sample_makefile(self.samplebase))
+    destzip.writestr(inf,afd.get_sample_makefile(self.samplebase,self.stylename))
 
     print "writing this project data...."
     jsonfilepath=os.path.join(rootdir,self.jsonpath)
