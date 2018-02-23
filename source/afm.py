@@ -90,139 +90,169 @@ class applicationFormData:
       r=r + boxdata.name
     return r
 
-  def formfrontenddef(self,boxdata):
-    r=""
-    if boxdata.type!=BoxData.TYPE_ENVIRONMENT or boxdata.halign==BoxData.HALIGN_RIGHT or boxdata.halign==BoxData.HALIGN_CENTER:
-      r=r+"\n% "
+  def formfrontenddef_env_l(self,name,as_comment=False):
+    if as_comment:
+      r="% "
     else:
-      r=r+"\n"
+      r=""
     r=r +r'\newenvironment{'
-    r=r + boxdata.name
+    r=r + name
     r=r +r'}{'
-    r=r + self.setvarATname(boxdata.name)
+    r=r + self.setvarATname(name)
     r=r +r'\begin{put@@box@env@nu}}{\end{put@@box@env@nu}}'
-    if boxdata.type!=BoxData.TYPE_ENVIRONMENT or boxdata.halign!=BoxData.HALIGN_RIGHT:
-      r=r+"\n% "
-    else:
-      r=r+"\n"
-
-    r=r +r'\newenvironment{'
-    r=r + boxdata.name
-    r=r +r'}{'
-    r=r + self.setvarATname(boxdata.name)
-    r=r +r'\begin{put@@box@env@nu}\begin{flushright}}{\end{flushright}\end{put@@box@env@nu}}'
-
-    if boxdata.type!=BoxData.TYPE_ENVIRONMENT or boxdata.halign!=BoxData.HALIGN_CENTER:
-      r=r+"\n% "
-    else:
-      r=r+"\n"
-    r=r +r'\newenvironment{'
-    r=r + boxdata.name
-    r=r +r'}{'
-    r=r + self.setvarATname(boxdata.name)
-    r=r +r'\begin{put@@box@env@nu}\begin{center}}{\end{center}\end{put@@box@env@nu}}'
-
-
-    if boxdata.type!=BoxData.TYPE_COMMAND or boxdata.halign==BoxData.HALIGN_RIGHT or boxdata.halign==BoxData.HALIGN_CENTER:
-      r=r+"\n% "
-    else:
-      r=r+"\n"
-    r=r +r'\newcommand{'+"\\"
-    r=r + boxdata.name
-    r=r +r'}[1]{'
-    r=r + self.setvarATname(boxdata.name)
-    r=r +r'\put@@box@com@nu{#1}}'
-
-    if boxdata.type!=BoxData.TYPE_COMMAND or boxdata.halign!=BoxData.HALIGN_RIGHT:
-      r=r+"\n% "
-    else:
-      r=r+"\n"
-    r=r +r'\newcommand{'+"\\"
-    r=r + boxdata.name
-    r=r +r'}[1]{'
-    r=r + self.setvarATname(boxdata.name)
-    r=r +r'\put@@box@com@nu{\begin{flushright}#1\end{flushright}}}'
-
-
-    if boxdata.type!=BoxData.TYPE_COMMAND or boxdata.halign!=BoxData.HALIGN_CENTER:
-      r=r+"\n% "
-    else:
-      r=r+"\n"
-    r=r +r'\newcommand{'+"\\"
-    r=r + boxdata.name
-    r=r +r'}[1]{'
-    r=r + self.setvarATname(boxdata.name)
-    r=r +r'\put@@box@com@nu{\begin{center}#1\end{center}}}'
-
-
-    if boxdata.type!=BoxData.TYPE_CHECKMARK:
-      r=r+"\n% "
-    else:
-      r=r+"\n"
-    r=r +r'\newcommand{'+"\\"
-    r=r + boxdata.name
-    r=r +r'}{'
-    r=r + self.setvarATname(boxdata.name)
-    r=r +r'\put@@box@checkmark@nu}'
-
-    
-    if boxdata.type!=BoxData.TYPE_STRIKE:
-      r=r+"\n% "
-    else:
-      r=r+"\n"
-    r=r +r'\newcommand{'+"\\"
-    r=r + boxdata.name
-    r=r +r'}{'
-    r=r + self.setvarATname(boxdata.name)
-    r=r +r'\put@@box@strike@nu}'
-
-
-    if boxdata.type!=BoxData.TYPE_RULE:
-      r=r+"\n% "
-    else:
-      r=r+"\n"
-    r=r +r'\newcommand{'+"\\"
-    r=r + boxdata.name
-    r=r +r'}{'
-    r=r + self.setvarATname(boxdata.name)
-    r=r +r'\put@@box@rule@nu}'
-
-    if boxdata.type!=BoxData.TYPE_CHECK_CIRCLE:
-      r=r+"\n% "
-    else:
-      r=r+"\n"
-    r=r +r'\newcommand{'+"\\"
-    r=r + boxdata.name
-    r=r +r'}{'
-    r=r + self.roundrectangleATname(boxdata.name)
-    r=r +r'}'
-  
     return r
-
-
-  def com_makebox_pos(self,boxdata):
-    if boxdata.valign==BoxData.VALIGN_BOTTOM:
-      return 'bl'
-    elif boxdata.valign==BoxData.VALIGN_TOP:
-      return 'tl'
+  def formfrontenddef_env_r(self,name,as_comment=False):
+    if as_comment:
+      r="% "
     else:
-      return 'l'
-    return ''
+      r=""
+    r=r +r'\newenvironment{'
+    r=r + name
+    r=r +r'}{'
+    r=r + self.setvarATname(name)
+    r=r +r'\begin{put@@box@env@nu}\begin{flushright}}{\end{flushright}\end{put@@box@env@nu}}'
+    return r
+  def formfrontenddef_env_c(self,name,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
+    r=r +r'\newenvironment{'
+    r=r +name
+    r=r +r'}{'
+    r=r + self.setvarATname(name)
+    r=r +r'\begin{put@@box@env@nu}\begin{center}}{\end{center}\end{put@@box@env@nu}}'
+    return r
+  def formfrontenddef_com_l(self,name,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
+    r=r +r'\newcommand{'+"\\"
+    r=r +name
+    r=r +r'}[1]{'
+    r=r + self.setvarATname(name)
+    r=r +r'\put@@box@com@nu{#1}}'
+    return r
+  def formfrontenddef_com_c(self,name,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
+    
+    r=r +r'\newcommand{'+"\\"
+    r=r +name
+    r=r +r'}[1]{'
+    r=r + self.setvarATname(name)
+    r=r +r'\put@@box@com@nu{\begin{center}#1\end{center}}}'
+    return r
+  def formfrontenddef_com_r(self,name,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
 
-
+    r=r +r'\newcommand{'+"\\"
+    r=r + name
+    r=r +r'}[1]{'
+    r=r + self.setvarATname(name)
+    r=r +r'\put@@box@com@nu{\begin{flushright}#1\end{flushright}}}'
+    return r
+  def formfrontenddef_checkmark(self,name,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
+    
+    r=r +r'\newcommand{'+"\\"
+    r=r + name
+    r=r +r'}{'
+    r=r + self.setvarATname(name)
+    r=r +r'\put@@box@checkmark@nu}'
+    return r
+  def formfrontenddef_strike(self,name,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
+    
+    r=r +r'\newcommand{'+"\\"
+    r=r + name
+    r=r +r'}{'
+    r=r + self.setvarATname(name)
+    r=r +r'\put@@box@strike@nu}'
+    return r
+  def formfrontenddef_rule(self,name,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
+    
+    r=r +r'\newcommand{'+"\\"
+    r=r +name
+    r=r +r'}{'
+    r=r + self.setvarATname(name)
+    r=r +r'\put@@box@rule@nu}'
+    return r
+  def formfrontenddef_check_circle(self,name,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
+    
+    r=r +r'\newcommand{'+"\\"
+    r=r + name
+    r=r +r'}{'
+    r=r + self.roundrectangleATname(name)
+    r=r +r'}'  
+    return r
   
-  def formdef(self,boxdata):
+  def formfrontenddef(self,boxdata):
+    r=[]
+    as_comment=not(boxdata.type==BoxData.TYPE_ENVIRONMENT and boxdata.halign==BoxData.HALIGN_LEFT)
+    r.append(self.formfrontenddef_env_l(boxdata.name,as_comment))
+    
+    as_comment=not(boxdata.type==BoxData.TYPE_ENVIRONMENT and boxdata.halign==BoxData.HALIGN_RIGHT)
+    r.append(self.formfrontenddef_env_r(boxdata.name,as_comment))
+
+    as_comment=not(boxdata.type==BoxData.TYPE_ENVIRONMENT and boxdata.halign==BoxData.HALIGN_CENTER)
+    r.append(self.formfrontenddef_env_c(boxdata.name,as_comment))
+
+    as_comment=not(boxdata.type==BoxData.TYPE_COMMAND and boxdata.halign==BoxData.HALIGN_LEFT)
+    r.append(self.formfrontenddef_com_l(boxdata.name,as_comment))
+
+    as_comment=not(boxdata.type==BoxData.TYPE_COMMAND and boxdata.halign==BoxData.HALIGN_RIGHT)
+    r.append(self.formfrontenddef_com_r(boxdata.name,as_comment))
+    
+    as_comment=not(boxdata.type==BoxData.TYPE_COMMAND and boxdata.halign==BoxData.HALIGN_CENTER)
+    r.append(self.formfrontenddef_com_c(boxdata.name,as_comment))
+
+    as_comment=not(boxdata.type==BoxData.TYPE_CHECKMARK)
+    r.append(self.formfrontenddef_checkmark(boxdata.name,as_comment))
+    
+    as_comment=not(boxdata.type==BoxData.TYPE_STRIKE)
+    r.append(self.formfrontenddef_strike(boxdata.name,as_comment))
+
+    as_comment=not(boxdata.type==BoxData.TYPE_RULE)
+    r.append(self.formfrontenddef_rule(boxdata.name,as_comment))
+
+    as_comment=not(boxdata.type==BoxData.TYPE_CHECK_CIRCLE)
+    r.append(self.formfrontenddef_check_circle(boxdata.name,as_comment))
+    return "\n".join(r)
+
+  def setvardef(self,boxdata):
     (x1,x2,w,y1,y2,h)=self.projectdata.get_box_coordinate(boxdata)
     x=self.dtppt2unitlength_as_str(x1-self.XMARGIN)
     if boxdata.valign==BoxData.VALIGN_BOTTOM:
       y=-y2
+      com_makebox_pos='bl'
     elif boxdata.valign==BoxData.VALIGN_CENTER:
       y=-y1-0.5*h
+      com_makebox_pos='l'
     else:
       y=-y1
+      com_makebox_pos='tl'
     y=self.dtppt2unitlength_as_str(y+self.YMARGIN)
-
-    com_makebox_pos=self.com_makebox_pos(boxdata)
 
     r=""
     r=r +r'\newcommand{'
@@ -239,8 +269,10 @@ class applicationFormData:
     r=r + self.dtppt2unitlength_as_str(h)    
     r=r +r'\unitlength}}'
 
-    new_setvar_at=r
-
+    return r
+  
+  def roundcircledef(self,boxdata):
+    (x1,x2,w,y1,y2,h)=self.projectdata.get_box_coordinate(boxdata)
     put_roundrectangle_at=self.roundrectangleATname(boxdata.name)
     midx=self.dtppt2unitlength_as_str(x1+0.5*w-self.XMARGIN)
     midy=self.dtppt2unitlength_as_str(-y1-0.5*h+self.YMARGIN)
@@ -282,8 +314,9 @@ class applicationFormData:
       r=r + self.dtppt2unitlength_as_str(round_hr)
       r=r +r'}'
     r=r +r'}'
-    new_roundrectangle_at=r
-    return (new_setvar_at,new_roundrectangle_at)
+    return r
+
+
 
 
   def page_atfirst(self,n):
@@ -299,7 +332,7 @@ class applicationFormData:
   def pdffilename(self):
     return self.projectdata.bgimagepath
 
-  def pagedef(self,n):
+  def pagedef_pdf(self,n):
     r=""
     r=r +r'\newenvironment{'
     r=r + self.pagename_pdf(n)
@@ -312,8 +345,9 @@ class applicationFormData:
     r=r +r'}'
     r=r + self.page_atfirst(n)
     r=r +r'}{\end{overwrappicture}}'
-    pdf=r
+    return r
 
+  def pagedef_woimage(self,n):
     r=""
     r=r +r'\newenvironment{'
     r=r + self.pagename_none(n)
@@ -326,8 +360,9 @@ class applicationFormData:
     r=r +r'}'
     r=r + self.page_atfirst(n)
     r=r +r'}{\end{overwrappicture*}}'
-    no=r
-    
+    return r
+  
+  def pagedef_frontend(self,n):
     r=''
     r=r +r"\if@PDF@image@type@nu@"
     r=r +r'\newenvironment{'
@@ -346,14 +381,22 @@ class applicationFormData:
     r=r + self.pagename_none(n)
     r=r +r'}}'+"\n"
     r=r +r'\fi'
-    fr=r
-    return (fr,no,pdf)
+    return r
 
   def common_command(self):
     return r'''
-% Redefine \baseuplength if you want to move background image vertically.
-
+% This file was created by AFM.
+% The names of commands to put boxes may be just Box IDs.
+% They are not good names to use.
+% Please define commands to use as frontend.
+%
+% Please redefine the command \pageNoDAtFirst,
+% if you want to do something whenever \begin{pageNoD} is called.
+% Please redefine \baseuplength
+% if you want to move background image up.
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Definition of basic commands
 \NeedsTeXFormat{LaTeX2e}
 \RequirePackage{geometry}
 \geometry{ignoreall,scale=1}
@@ -388,15 +431,15 @@ class applicationFormData:
 \put(0,0){\makebox(0,0)[tl]{}}}
 {\end{picture}}
 
-\newcommand{\roundCorners@nu}[3][20]{\put(#2,#3){\oval(#1,#1)[tr]}\put(-#2,#3){\oval(#1,#1)[tl]}\put(#2,-#3){\oval(#1,#1)[br]}\put(-#2,-#3){\oval(#1,#1)[bl]}}
-\newcommand{\boxWithoutCorners@nu}[4]{\put(0,#4){\line(1,0){#1}}\put(0,#4){\line(-1,0){#1}}\put(0,-#4){\line(1,0){#1}}\put(0,-#4){\line(-1,0){#1}}\put(#3,0){\line(0,1){#2}}\put(#3,0){\line(0,-1){#2}}\put(-#3,0){\line(0,1){#2}}\put(-#3,0){\line(0,-1){#2}}}
+\newcommand{\roundCorners@nu}[3][20]{\setlength\unitlength\unitlength@nu\put(#2,#3){\oval(#1,#1)[tr]}\put(-#2,#3){\oval(#1,#1)[tl]}\put(#2,-#3){\oval(#1,#1)[br]}\put(-#2,-#3){\oval(#1,#1)[bl]}}
+\newcommand{\boxWithoutCorners@nu}[4]{\setlength\unitlength\unitlength@nu\put(0,#4){\line(1,0){#1}}\put(0,#4){\line(-1,0){#1}}\put(0,-#4){\line(1,0){#1}}\put(0,-#4){\line(-1,0){#1}}\put(#3,0){\line(0,1){#2}}\put(#3,0){\line(0,-1){#2}}\put(-#3,0){\line(0,1){#2}}\put(-#3,0){\line(0,-1){#2}}}
 
-\newcommand{\put@roundCorners@nu}[7]{\put(#1,#2){\roundCorners@nu[#3]{#4}{#5}\boxWithoutCorners@nu{#4}{#5}{#6}{#7}}}
+\newcommand{\put@roundCorners@nu}[7]{\setlength\unitlength\unitlength@nu\put(#1,#2){\roundCorners@nu[#3]{#4}{#5}\boxWithoutCorners@nu{#4}{#5}{#6}{#7}}}
 
-\newcommand{\put@box@@nu}[4][]{\put(#2,#3){\makebox(0,0)[#1]{#4}}}
+\newcommand{\put@box@@nu}[4][]{\setlength\unitlength\unitlength@nu\put(#2,#3){\makebox(0,0)[#1]{#4}}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% Definition of commands to put boxes by gloval variables.
 \newcommand{\my@temp@var@x}{}
 \newcommand{\my@temp@var@y}{}
 \newcommand{\my@temp@var@p}{}
@@ -415,30 +458,34 @@ class applicationFormData:
 '''
   
   def get_style_code(self):
-    r="%\n"
+    r="%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     r=r+self.common_command()
-    r=r+"%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+    r=r+"%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Definition of pages."
 
     page_atfirst=""
     page_def=""
     form_front=""
 
     for i in self.projectdata.get_pages_with_boxdata():
-      (fr,no,pdf)=self.pagedef(i)
-      page_def=page_def+"\n"+fr+"\n"+no+"\n"+pdf+"\n\n"
+      page_def=page_def+"\n"+self.pagedef_frontend(i)
+      page_def=page_def+"\n"+self.pagedef_woimage(i)
+      page_def=page_def+"\n"+self.pagedef_pdf(i)
       page_atfirst=page_atfirst+"\n"+self.def_page_atfirst(i)
       form_front=form_front+"\n% page "+str(i+1)+" i.e.," +int2alphabet(i)
       for boxdata in self.projectdata.x_boxdata_in_the_page(i):
-        form_front=form_front+"\n\n"+("\n".join(self.formdef(boxdata)))
+        form_front=form_front+"\n\n"+self.setvardef(boxdata)
+        form_front=form_front+"\n"+self.roundcircledef(boxdata)
         form_front=form_front+"\n\n"+self.formfrontenddef(boxdata)
         form_front=form_front+"\n"
         
-    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+
     r=r+page_def
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Definition of each box\n"
+    r=r+"% Set vars for x, y, pos, width, height.\n"
+
+    r=r+form_front
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     r=r+page_atfirst
-    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
-    r=r+form_front
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     return r
 
@@ -582,7 +629,7 @@ class BoxData:
   @classmethod
   def construct_from_dictionary(cls,d):
     r=BoxData(d["page"],d["x_1"],d["x_2"],d["y_1"],d["y_2"],d["id_as_int"])
-    r.name=d["name"]
+    #r.name=d["name"]
     r.sampletext=d["sampletext"]
     r.valign=d["valign"]
     r.halign=d["halign"]
@@ -1040,17 +1087,34 @@ class Bar(gtk.DrawingArea):
     self.connect('expose-event', self.on_self_expose_event)
     self.margin=margin
     self.hilight_mode=0
+    self.hilight_spot_size=8
     
   def set_hilight_mode(self,mode):
     self.hilight_mode=mode
     
   def get_background_rgba(self):
     if self.hilight_mode==0:
-      return (0.5,0.1,0.1,0.1)
+      return (0.5,0.9,0.9,1)
     elif self.hilight_mode==1:
-      return (1.0,0.4,0.4,0.7)
+      return (0.1,1.0,0.3,1)
     elif self.hilight_mode==2:
-      return (0.1,0.1,0.5,0.1)
+      return (0.5,0.1,0.1,1)
+    elif self.hilight_mode==3:
+      return (0.1,0.5,0.5,1)
+    elif self.hilight_mode==4:
+      return (0.1,0.5,0.1,1)
+    elif self.hilight_mode==5:
+      return (1.0,1.0,0.5,1)
+    else:
+      return (0.5,0.5,0.5,0.5)
+    
+  def get_line_rgba(self):
+    if self.hilight_mode==0:
+      return (0.4,0.05,0.05,0.5)
+    elif self.hilight_mode==1:
+      return (1.0,0.3,0.3,0.5)
+    elif self.hilight_mode==2:
+      return (0.1,0.1,0.5,0.5)
     elif self.hilight_mode==3:
       return (0.1,0.5,0.5,0.5)
     elif self.hilight_mode==4:
@@ -1059,22 +1123,6 @@ class Bar(gtk.DrawingArea):
       return (0.5,0.5,0.1,0.5)
     else:
       return (0.5,0.5,0.5,0.5)
-    
-  def get_line_rgba(self):
-    if self.hilight_mode==0:
-      return (0.7,0.05,0.05,1)
-    elif self.hilight_mode==1:
-      return (1.0,0.3,0.3,1)
-    elif self.hilight_mode==2:
-      return (0.1,0.1,0.5,1)
-    elif self.hilight_mode==3:
-      return (0.1,0.5,0.5,1)
-    elif self.hilight_mode==4:
-      return (0.5,0.1,0.5,1)
-    elif self.hilight_mode==5:
-      return (0.5,0.5,0.1,1)
-    else:
-      return (0.5,0.5,0.5,1)
 
 
   def on_self_size_allocate(self, widget, allocation):
@@ -1085,17 +1133,6 @@ class Bar(gtk.DrawingArea):
     ctx = widget.window.cairo_create()
 
     if self.direction & BarOnLayout.MASK_VIRTICAL_BAR:
-      c = self.get_background_rgba()
-      if c != None:
-        (r,g,b,a)=c
-        ctx.set_source_rgba(r,g,b,a)
-        ctx.new_path()                         
-        ctx.move_to(0, self.margin)
-        ctx.rel_line_to(0,self.height-self.margin)      
-        ctx.rel_line_to(self.width, 0)       
-        ctx.rel_line_to(0,-self.height+self.margin)      
-        ctx.close_path()                       
-        ctx.fill() 
       c = self.get_line_rgba()
       if c != None:
         (r,g,b,a)=c
@@ -1107,19 +1144,19 @@ class Bar(gtk.DrawingArea):
         ctx.rel_line_to(0,-self.height)
         ctx.close_path()
         ctx.fill()
-
-    else:
-      c= self.get_background_rgba()
-      if c!=None:
+      c = self.get_background_rgba()
+      if c != None:
         (r,g,b,a)=c
         ctx.set_source_rgba(r,g,b,a)
         ctx.new_path()                         
-        ctx.move_to(self.margin, 0)                      
-        ctx.rel_line_to(self.width-self.margin, 0)       
-        ctx.rel_line_to(0,self.height)      
-        ctx.rel_line_to(-self.width+self.margin, 0)  
+        ctx.move_to(0, self.margin)
+        ctx.rel_line_to(0,self.hilight_spot_size)      
+        ctx.rel_line_to(self.width, 0)       
+        ctx.rel_line_to(0,-self.hilight_spot_size)      
         ctx.close_path()                       
         ctx.fill() 
+
+    else:
       c= self.get_line_rgba()
       if c!=None:
         (r,g,b,a)=c
@@ -1129,6 +1166,17 @@ class Bar(gtk.DrawingArea):
         ctx.rel_line_to(self.width, 0)       
         ctx.rel_line_to(0,-1)      
         ctx.rel_line_to(-self.width, 0)  
+        ctx.close_path()                       
+        ctx.fill() 
+      c= self.get_background_rgba()
+      if c!=None:
+        (r,g,b,a)=c
+        ctx.set_source_rgba(r,g,b,a)
+        ctx.new_path()                         
+        ctx.move_to(self.margin, 0)                      
+        ctx.rel_line_to(self.hilight_spot_size, 0)       
+        ctx.rel_line_to(0,self.height)      
+        ctx.rel_line_to(-self.hilight_spot_size, 0)  
         ctx.close_path()                       
         ctx.fill() 
 
@@ -1191,7 +1239,7 @@ class SpinButtonForBarOnLayout(gtk.SpinButton):
 class BarOnLayout(gtk.EventBox):
   MASK_VIRTICAL_BAR=2
   MASK_OPPOSIT_DIRECTION=1
-  LINEWIDTH=3
+  LINEWIDTH=1
   def __init__(self,direction,max_x,max_y,spinbuttonforbar,griddata,current_page):
     gtk.EventBox.__init__(self)
     self.x=0
@@ -1201,22 +1249,43 @@ class BarOnLayout(gtk.EventBox):
     self.max_y=max_y
     self.griddata=griddata
     self.spinbutton=spinbuttonforbar
-    self.label=gtk.Label()
-    self.label.set_markup(str(self.griddata.id))
-    self.label.show()
+#    self.label=gtk.Label()
+#    self.label.set_markup(str(self.griddata.id))
+#    self.label.show()
     if direction & self.MASK_VIRTICAL_BAR:
       self.height=max_y
       self.width=self.LINEWIDTH
       self.margin=(13+9*griddata.id)%self.height
-
+      box=gtk.HBox()
+      label_box=gtk.VBox()
+      label_box.pack_start(gtk.HSeparator(),False,False,0)
     else:
       self.width=max_x
       self.height=self.LINEWIDTH
       self.margin=(13+4*griddata.id)%self.width
+      box=gtk.VBox()
+      label_box=gtk.HBox()
+      label_box.pack_start(gtk.VSeparator(),False,False,0)
+
     drawingarea = Bar(direction,self.margin)
     self.drawingarea=drawingarea
     drawingarea.set_size_request(self.width,self.height)
-    self.add(drawingarea)
+    #self.add(drawingarea)
+    self.set_visible(True)
+    self.set_visible_window(False)
+
+    self.add(box)
+    box.add(drawingarea)
+    label=gtk.Label()
+    label.set_markup(str(self.griddata.id))
+    label_box.pack_start(label,False, False, 0)
+    box.add(label_box)
+    label_box.show_all()
+    label.show()
+    box.show()
+    self.label_box=label_box
+    
+
     drawingarea.show()
     self.draging=False
     self.connect("motion_notify_event", self.motion_notify_event)
@@ -1224,32 +1293,43 @@ class BarOnLayout(gtk.EventBox):
     self.connect("button_release_event", self.button_release_event)
     self.current_page=current_page
     self.hilight_mode=0
+    self.should_hide_if_not_current_page=True
+    self.should_hide_whenever=False
     self.set_hilight()
     self.spinbutton.append_bar(self)
 
-    
   def set_hilight(self):
     if self.current_page==self.griddata.page:
+      if not self.should_hide_whenever:
+        self.set_visible(True)
+#        self.label.set_visible(True)
       if self.hilight_mode==0:
         self.drawingarea.set_hilight_mode(0)
       else:
         self.drawingarea.set_hilight_mode(1)
     else:
       if self.hilight_mode==0:
+        if self.should_hide_if_not_current_page or self.should_hide_whenever:
+          self.set_visible(False)
+#          self.label.set_visible(False)
         self.drawingarea.set_hilight_mode(2)
       else:
+        if not self.should_hide_whenever:
+          self.set_visible(True)
+#          self.label.set_visible(True)
         self.drawingarea.set_hilight_mode(3)
         
   def set_hilight_mode(self,mode):
     self.hilight_mode=mode
     self.set_hilight()
     
-  def set_current_page(self,p):
+  def set_current_page(self,p,should_hide_if_not_current_page):
     self.current_page=p
+    self.should_hide_if_not_current_page=should_hide_if_not_current_page
     self.set_hilight()
     
-  def get_label(self):
-    return self.label
+#  def get_label(self):
+#    return self.label
   
   def get_spinbutton(self):
     return self.spinbutton
@@ -1300,10 +1380,11 @@ class BarOnLayout(gtk.EventBox):
         self.spinbutton.set_value(self.y)
     if self.griddata.is_horizontal:
       self.griddata.value=self.y
-      self.parent.move(self.label, x+self.margin, self.y)
+#      self.label.parent.move(self.label, self.y, self.y)
+#      self.label.parent.move(self.label, x+self.margin, self.y)
     else:
       self.griddata.value=self.x
-      self.parent.move(self.label, self.x+self.LINEWIDTH, y+self.margin)
+#      self.label.parent.move(self.label, self.x+self.LINEWIDTH, y+self.margin)
     
 
 
@@ -1318,8 +1399,11 @@ class BarOnLayout(gtk.EventBox):
       self.spinbutton.set_current_bar(self)
       self.spinbutton.set_value(self.y)
     self.parent.move(self,self.x,y)
-    self.parent.move(self.label, self.x+self.margin, y)
-
+    #self.label.parent.move(self.label, self.x+self.margin, y)
+    self.label_box.set_spacing(y*4 % 60)
+    #self.label.parent.move(self.label, y*4 % 60, y)
+    self.drawingarea.margin=y*4 % 60
+    self.drawingarea.hilight_spot_size=16
       
   def move_horizontal(self,x):
     if self.direction & self.MASK_OPPOSIT_DIRECTION and self.direction & self.MASK_VIRTICAL_BAR:
@@ -1332,8 +1416,11 @@ class BarOnLayout(gtk.EventBox):
       self.spinbutton.set_current_bar(self)
       self.spinbutton.set_value(self.x)
     self.parent.move(self, x, self.y)
-    self.parent.move(self.label, x+self.LINEWIDTH, self.y+self.margin)
-
+    #self.label.parent.move(self.label, x+self.LINEWIDTH, self.y+self.margin)
+    #self.label.parent.move(self.label,x, x*5 % 75)
+    self.label_box.set_spacing(x*5 % 75)
+    self.drawingarea.margin=x*5 % 75
+    self.drawingarea.hilight_spot_size=20
 
   def button_press_event(self,widget, event):
     self.spinbutton.set_current_bar(self)
@@ -1425,6 +1512,7 @@ class LayoutOverBoxesWithHoganArea:
     self.layout = layout
     self.layout.set_page(p)
 
+    
     layout.set_size(self.projectdata.lwidth, self.projectdata.lheight)
     layout.connect("size-allocate", self.layout_resize)
     layout.show()
@@ -1514,10 +1602,14 @@ class LayoutOverBoxesWithHoganArea:
     hbox.add(box)
     hbox.show_all()
     self.box=hbox
-
+        
     for griddata in self.projectdata.grids:
       self.add_ruler(griddata)
-      
+  def on_self_size_allocate(self, widget, allocation):
+    pass
+  def on_self_expose_event(self, widget, event):
+    pass
+  
   def add_ruler(self,griddata):
     w=self.projectdata.lwidth
     h=self.projectdata.lheight
@@ -1529,7 +1621,6 @@ class LayoutOverBoxesWithHoganArea:
     self.rulers.append(bar)
     bar.show()
     self.layout.add(bar)
-    self.layout.add(bar.get_label())
     bar.set_value(griddata.value)
 
   def add_new_ruler(self):
@@ -1567,7 +1658,7 @@ class LayoutOverBoxesWithHoganArea:
   def on_page_changed_event(self,widget):
     p=get_int_from_spinbutton(widget)
     for ri in self.rulers:
-      ri.set_current_page(p)
+      ri.set_current_page(p,True)
     self.layout.set_page(p)
 
   def get_currentpage(self):
@@ -1594,6 +1685,7 @@ class ProjectData:
       self.bgimagepath=prev_proj["bgimagepath"]
       self.bgimagefullpath=os.path.join(self.destdir,self.bgimagepath)
       prev_proj["pdfuri"]='file://'+urllib.pathname2url(self.bgimagefullpath)
+      self.destdir=os.path.join(self.destdir,"..")
     else:
       self.bgimagefullpath=path
       self.bgimagepath=filename
@@ -1864,12 +1956,6 @@ class AFMMainArea:
     print 'creating ', destzipfilename
     rootdir=os.path.splitext(os.path.basename(destzipfilename))[0]
     destzip=zipfile.ZipFile(destzipfilename,'w')
-    self.projectdata.output_to_zipfile(destzip,rootdir)
-    gtk.main_quit()
-
-  def on_click_save(self,widget):
-    rootdir='stylefile'
-    destzip=zipfile.ZipFile(os.path.join(self.destdir,rootdir+'.zip'),'w')
     self.projectdata.output_to_zipfile(destzip,rootdir)
     gtk.main_quit()
 
