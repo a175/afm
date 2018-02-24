@@ -1088,7 +1088,7 @@ class Bar(gtk.DrawingArea):
     self.margin=margin
     self.hilight_mode=0
     self.hilight_spot_size=8
-    
+
   def set_hilight_mode(self,mode):
     self.hilight_mode=mode
     
@@ -1249,9 +1249,7 @@ class BarOnLayout(gtk.EventBox):
     self.max_y=max_y
     self.griddata=griddata
     self.spinbutton=spinbuttonforbar
-#    self.label=gtk.Label()
-#    self.label.set_markup(str(self.griddata.id))
-#    self.label.show()
+    
     if direction & self.MASK_VIRTICAL_BAR:
       self.height=max_y
       self.width=self.LINEWIDTH
@@ -1298,39 +1296,33 @@ class BarOnLayout(gtk.EventBox):
     self.set_hilight()
     self.spinbutton.append_bar(self)
 
+
   def set_hilight(self):
+#    self.set_visible(False)
     if self.current_page==self.griddata.page:
-      if not self.should_hide_whenever:
-        self.set_visible(True)
-#        self.label.set_visible(True)
+      self.set_visible(not self.should_hide_whenever)
       if self.hilight_mode==0:
         self.drawingarea.set_hilight_mode(0)
       else:
         self.drawingarea.set_hilight_mode(1)
     else:
       if self.hilight_mode==0:
-        if self.should_hide_if_not_current_page or self.should_hide_whenever:
-          self.set_visible(False)
-#          self.label.set_visible(False)
+        self.set_visible(not self.should_hide_if_not_current_page and not self.should_hide_whenever)
         self.drawingarea.set_hilight_mode(2)
       else:
-        if not self.should_hide_whenever:
-          self.set_visible(True)
-#          self.label.set_visible(True)
+        self.set_visible(not self.should_hide_whenever)
         self.drawingarea.set_hilight_mode(3)
         
   def set_hilight_mode(self,mode):
     self.hilight_mode=mode
     self.set_hilight()
     
-  def set_current_page(self,p,should_hide_if_not_current_page):
+  def set_current_page(self,p,should_hide_if_not_current_page,should_hide_whenever):
     self.current_page=p
     self.should_hide_if_not_current_page=should_hide_if_not_current_page
+    self.should_hide_whenever=should_hide_whenever
     self.set_hilight()
-    
-#  def get_label(self):
-#    return self.label
-  
+
   def get_spinbutton(self):
     return self.spinbutton
   
@@ -1542,13 +1534,13 @@ class LayoutOverBoxesWithHoganArea:
     label=gtk.Label()
     hbox.add(label)
     label.set_markup("Current page: ")
-
     
     adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.n_pages-1, step_incr=-1)
     entry=gtk.SpinButton(adj, 0, 0)
     entry.connect("changed", self.on_page_changed_event)
     hbox.add(entry)
 
+    
     self.coordinate_hbox.add(gtk.VSeparator())
 
     hbox=gtk.HBox()
@@ -1572,7 +1564,8 @@ class LayoutOverBoxesWithHoganArea:
     self.spb.connect("changed", self.spb.move_bar_on_changed)
     entry.connect("changed", self.spb.set_current_bar_on_changed)
 
-    coordinate_hbox.add(gtk.VSeparator())
+    
+    self.coordinate_hbox.add(gtk.VSeparator())
   
     hbox = gtk.HButtonBox()
     coordinate_hbox.add(hbox)
@@ -1591,7 +1584,16 @@ class LayoutOverBoxesWithHoganArea:
     self.button_edit=button
     button.connect('clicked', self.add_new_ruler_onclick)
 
+
     self.coordinate_hbox.add(gtk.VSeparator())
+
+    checkbutton= gtk.CheckButton("hide all")
+    checkbutton.show()
+    checkbutton.connect("toggled", self.on_toggle_hide_grid)
+    self.coordinate_hbox.add(checkbutton)
+
+    self.coordinate_hbox.add(gtk.VSeparator())
+
 
     self.rulers=[]
 
@@ -1603,13 +1605,13 @@ class LayoutOverBoxesWithHoganArea:
     hbox.show_all()
     self.box=hbox
         
+    self.current_page=self.layout.page
+    self.should_hide_if_not_current_page=True
+    self.should_hide_whenever=False
+
     for griddata in self.projectdata.grids:
       self.add_ruler(griddata)
-  def on_self_size_allocate(self, widget, allocation):
-    pass
-  def on_self_expose_event(self, widget, event):
-    pass
-  
+      
   def add_ruler(self,griddata):
     w=self.projectdata.lwidth
     h=self.projectdata.lheight
@@ -1657,13 +1659,24 @@ class LayoutOverBoxesWithHoganArea:
 
   def on_page_changed_event(self,widget):
     p=get_int_from_spinbutton(widget)
-    for ri in self.rulers:
-      ri.set_current_page(p,True)
+    self.current_page=p
+    self.update_rulers()
     self.layout.set_page(p)
+
+  def on_toggle_hide_grid(self, widget):
+    if widget.get_active()==0:
+      self.should_hide_whenever=False
+    else:
+      self.should_hide_whenever=True
+    self.update_rulers()
+    self.should_hide_whenever
+      
+  def update_rulers(self):
+    for ri in self.rulers:
+      ri.set_current_page(self.current_page,self.should_hide_if_not_current_page,self.should_hide_whenever)
 
   def get_currentpage(self):
     return self.layout.page
-
 
 class ProjectData:
   HEIGHT = 600
