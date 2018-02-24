@@ -629,7 +629,7 @@ class BoxData:
   @classmethod
   def construct_from_dictionary(cls,d):
     r=BoxData(d["page"],d["x_1"],d["x_2"],d["y_1"],d["y_2"],d["id_as_int"])
-    #r.name=d["name"]
+    r.name=d["name"]
     r.sampletext=d["sampletext"]
     r.valign=d["valign"]
     r.halign=d["halign"]
@@ -903,15 +903,12 @@ class BoxDataListArea:
     button = gtk.Button(stock=gtk.STOCK_NEW)
     hbox.add(button)
     self.button_new=button
-#    button.connect('clicked', self.on_click_add)
     button = gtk.Button(stock=gtk.STOCK_REMOVE)
     hbox.add(button)
     self.button_remove=button
-#    button.connect('clicked', self.remove_selected)
     button = gtk.Button(stock=gtk.STOCK_EDIT)
     hbox.add(button)
     self.button_edit=button
-#    button.connect('clicked', self.edit_selected)
 
     vbox.show_all()
     for boxdata in self.parent.projectdata.boxes:
@@ -1268,7 +1265,6 @@ class BarOnLayout(gtk.EventBox):
     drawingarea = Bar(direction,self.margin)
     self.drawingarea=drawingarea
     drawingarea.set_size_request(self.width,self.height)
-    #self.add(drawingarea)
     self.set_visible(True)
     self.set_visible_window(False)
 
@@ -1298,7 +1294,6 @@ class BarOnLayout(gtk.EventBox):
 
 
   def set_hilight(self):
-#    self.set_visible(False)
     if self.current_page==self.griddata.page:
       self.set_visible(not self.should_hide_whenever)
       if self.hilight_mode==0:
@@ -1372,13 +1367,8 @@ class BarOnLayout(gtk.EventBox):
         self.spinbutton.set_value(self.y)
     if self.griddata.is_horizontal:
       self.griddata.value=self.y
-#      self.label.parent.move(self.label, self.y, self.y)
-#      self.label.parent.move(self.label, x+self.margin, self.y)
     else:
       self.griddata.value=self.x
-#      self.label.parent.move(self.label, self.x+self.LINEWIDTH, y+self.margin)
-    
-
 
   def move_virtical(self,y):
     if self.direction & self.MASK_OPPOSIT_DIRECTION and self.direction & self.MASK_VIRTICAL_BAR==0:
@@ -1391,9 +1381,7 @@ class BarOnLayout(gtk.EventBox):
       self.spinbutton.set_current_bar(self)
       self.spinbutton.set_value(self.y)
     self.parent.move(self,self.x,y)
-    #self.label.parent.move(self.label, self.x+self.margin, y)
     self.label_box.set_spacing(y*4 % 60)
-    #self.label.parent.move(self.label, y*4 % 60, y)
     self.drawingarea.margin=y*4 % 60
     self.drawingarea.hilight_spot_size=16
       
@@ -1408,8 +1396,6 @@ class BarOnLayout(gtk.EventBox):
       self.spinbutton.set_current_bar(self)
       self.spinbutton.set_value(self.x)
     self.parent.move(self, x, self.y)
-    #self.label.parent.move(self.label, x+self.LINEWIDTH, self.y+self.margin)
-    #self.label.parent.move(self.label,x, x*5 % 75)
     self.label_box.set_spacing(x*5 % 75)
     self.drawingarea.margin=x*5 % 75
     self.drawingarea.hilight_spot_size=20
