@@ -1091,9 +1091,9 @@ class Bar(gtk.DrawingArea):
     
   def get_background_rgba(self):
     if self.hilight_mode==0:
-      return (0.5,0.9,0.9,1)
+      return (0.1,0.2,1.0,1)
     elif self.hilight_mode==1:
-      return (0.1,1.0,0.3,1)
+      return (0.3,0.7,0.7,1)
     elif self.hilight_mode==2:
       return (0.5,0.1,0.1,1)
     elif self.hilight_mode==3:
@@ -1271,7 +1271,7 @@ class BarOnLayout(gtk.EventBox):
     self.add(box)
     box.add(drawingarea)
     label=gtk.Label()
-    label.set_markup(str(self.griddata.id))
+    label.set_markup('<span foreground="#0055FF" size="small">'+str(self.griddata.id)+'</span>')
     label_box.pack_start(label,False, False, 0)
     box.add(label_box)
     label_box.show_all()
