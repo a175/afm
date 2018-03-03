@@ -22,15 +22,16 @@ def get_int_from_spinbutton(spinbutton):
     return spinbutton.get_value_as_int()
 
 
-def int2alphabet(n):
-  r=""
-  while n>19:
-    r=chr(ord('A')+(n%20))+r
-    n=(n-(n%20))//20
-  return  chr(ord('A')+n)+r
 
 #####################################################
 class applicationFormData:
+  def int2alphabet(self,n):
+    r=""
+    while n>19:
+      r=chr(ord('a')+(n%20))+r
+      n=(n-(n%20))//20
+    return  chr(ord('a')+n)+r
+  
   def create_bgimage_file(self,pdffullpath,destzip,rootdir):    
     destzip.write(pdffullpath,os.path.join(rootdir,self.pdffilename()))
 
@@ -320,11 +321,11 @@ class applicationFormData:
 
 
   def page_atfirst(self,n):
-    return r'\pageNo'+int2alphabet(n)+r'AtFirst'
+    return r'\pageNo'+self.int2alphabet(n)+r'AtFirst'
   def def_page_atfirst(self,n):
     return r'\newcommand{'+self.page_atfirst(n)+r'}{}'
   def pagename_frontend(self,n):
-    return "pageNo"+int2alphabet(n)
+    return "pageNo"+self.int2alphabet(n)
   def pagename_none(self,n):
     return self.pagename_frontend(n)+"*"
   def pagename_pdf(self,n):
@@ -451,7 +452,7 @@ class applicationFormData:
 \newenvironment{put@@box@env@nu}{\begin{lrbox}{\MyBlackBox@nu}\begin{minipage}[c]{\my@temp@var@w}}{\end{minipage}\end{lrbox}\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\usebox{\MyBlackBox@nu}}}
 \newcommand{\put@@box@com@nu}[1]{\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\begin{minipage}[c]{\my@temp@var@w}#1\end{minipage}}}
 \newcommand{\put@@box@rule@nu}{\put@@box@com@nu{\rule{\my@temp@var@w}{\my@temp@var@h}}}
-\newcommand{\put@@box@strike@nu}{\put@@box@com@nu{\rule[0.1734\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\kern -\my@temp@var@w\rule[0.6\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\rule{opt}{\my@temp@var@h}}}
+\newcommand{\put@@box@strike@nu}{\put@@box@com@nu{\rule[0.22\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\kern -\my@temp@var@w\rule[0.6\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\rule{0pt}{\my@temp@var@h}}}
 \newcommand{\put@@box@checkmark@nu}{\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\begin{minipage}[c]{\my@temp@var@w}\centering$\checkmark$\end{minipage}}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -471,7 +472,7 @@ class applicationFormData:
       page_def=page_def+"\n"+self.pagedef_woimage(i)
       page_def=page_def+"\n"+self.pagedef_pdf(i)
       page_atfirst=page_atfirst+"\n"+self.def_page_atfirst(i)
-      form_front=form_front+"\n% page "+str(i+1)+" i.e.," +int2alphabet(i)
+      form_front=form_front+"\n% page "+str(i+1)+" i.e.," +self.int2alphabet(i)
       for boxdata in self.projectdata.x_boxdata_in_the_page(i):
         form_front=form_front+"\n\n"+self.setvardef(boxdata)
         form_front=form_front+"\n"+self.roundcircledef(boxdata)
@@ -580,9 +581,9 @@ class BoxData:
   def int2alphabet(self,n):
     r=""
     while n>19:
-      r=chr(ord('A')+(n%20))+r
+      r=chr(ord('a')+(n%20))+r
       n=(n-(n%20))//20
-    return  chr(ord('A')+n)+r
+    return  chr(ord('a')+n)+r
 
   def get_similar_boxdata(self):
     bd=BoxData(self.page,self.x,self.y,self.width,self.height)
@@ -733,31 +734,32 @@ class BoxDataEntryArea:
     table.attach(entry,2,3,8,9)
 
     label=gtk.Label()
-    label.set_markup("right")
-    table.attach(label,1,2,9,10)
-    adjustment = gtk.Adjustment(value=boxdata.x_2,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
-    entry=gtk.SpinButton(adjustment)
-    entry.set_value(boxdata.x_2)
-    self.entry_x2=entry
-    table.attach(entry,2,3,9,10)
-
-    label=gtk.Label()
-    label.set_markup("top")
-    table.attach(label,1,2,10,11)
-    adjustment = gtk.Adjustment(value=boxdata.y_1,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
-    entry=gtk.SpinButton(adjustment)
-    entry.set_value(boxdata.y_1)
-    self.entry_y1=entry
-    table.attach(entry,2,3,10,11)
-
-    label=gtk.Label()
     label.set_markup("bottom")
-    table.attach(label,1,2,11,12)
+    table.attach(label,1,2,10,11)
     adjustment = gtk.Adjustment(value=boxdata.y_2,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
     entry=gtk.SpinButton(adjustment)
     entry.set_value(boxdata.y_2)
     self.entry_y2=entry
+    table.attach(entry,2,3,10,11)
+
+    label=gtk.Label()
+    label.set_markup("right")
+    table.attach(label,1,2,11,12)
+    adjustment = gtk.Adjustment(value=boxdata.x_2,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
+    entry=gtk.SpinButton(adjustment)
+    entry.set_value(boxdata.x_2)
+    self.entry_x2=entry
     table.attach(entry,2,3,11,12)
+
+    label=gtk.Label()
+    label.set_markup("top")
+    table.attach(label,1,2,12,13)
+    adjustment = gtk.Adjustment(value=boxdata.y_1,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
+    entry=gtk.SpinButton(adjustment)
+    entry.set_value(boxdata.y_1)
+    self.entry_y1=entry
+    table.attach(entry,2,3,12,13)
+
 
     self.set_editable_all(True)
 
@@ -793,7 +795,116 @@ class BoxDataEntryArea:
 
     return self.boxdata
 
+class TableDataEntryArea:
+  COMBO_VALIGN=[("top",BoxData.VALIGN_TOP),("center",BoxData.VALIGN_CENTER),("bottom",BoxData.VALIGN_BOTTOM)]
+  COMBO_HALIGN=[("left",BoxData.HALIGN_LEFT),("center",BoxData.HALIGN_CENTER),("right",BoxData.HALIGN_RIGHT)]
+  COMBO_TYPE=[("environment",BoxData.TYPE_ENVIRONMENT),("command",BoxData.TYPE_COMMAND),("checkmark",BoxData.TYPE_CHECKMARK),("strike",BoxData.TYPE_STRIKE),("rule",BoxData.TYPE_RULE),("check by circle",BoxData.TYPE_CHECK_CIRCLE)]
 
+  def __init__(self,message,projectdata,current_page):
+    self.projectdata=projectdata
+    vbox=gtk.VBox()
+    self.vbox=vbox
+    label=gtk.Label()
+    label.set_markup(message)
+    vbox.pack_start(label,False,False,10)
+    table=gtk.Table(2,10)
+    vbox.add(table)
+
+    label=gtk.Label()
+    label.set_markup("virtical align")
+    table.attach(label,1,2,4,5)
+    combobox = gtk.combo_box_new_text()
+    for i,(text,v) in enumerate(self.COMBO_VALIGN):
+      combobox.append_text(text)
+      #if boxdata.valign==v:
+      #  combobox.set_active(i)
+    combobox.set_active(1)
+    self.entry_valign=combobox
+    table.attach(combobox,2,3,4,5)
+
+    label=gtk.Label()
+    label.set_markup("horizontal align")
+    table.attach(label,1,2,5,6)
+    combobox = gtk.combo_box_new_text()
+    for i,(text,v) in enumerate(self.COMBO_HALIGN):
+      combobox.append_text(text)
+      #if boxdata.halign==v:
+      #  combobox.set_active(i)
+    combobox.set_active(1)
+    self.entry_halign=combobox
+    table.attach(combobox,2,3,5,6)
+
+    label=gtk.Label()
+    label.set_markup("type")
+    table.attach(label,1,2,6,7)
+    combobox = gtk.combo_box_new_text()
+    for i,(text,v) in enumerate(self.COMBO_TYPE):
+      combobox.append_text(text)
+      #if boxdata.type==v:
+      #  combobox.set_active(i)
+    combobox.set_active(1)
+    self.entry_type=combobox
+    table.attach(combobox,2,3,6,7)
+
+    label=gtk.Label()
+    label.set_markup("page")
+    table.attach(label,1,2,7,8)
+    adjustment = gtk.Adjustment(value=current_page,lower=0,upper=projectdata.n_pages,step_incr=1)
+    entry=gtk.SpinButton(adjustment)
+    entry.set_value(current_page)
+    self.entry_page=entry
+    table.attach(entry,2,3,7,8)
+
+    label=gtk.Label()
+    label.set_markup("t,b;t,b;...;t,b")
+    table.attach(label,1,2,8,9)
+    entry=gtk.Entry()
+    self.entry_yy=entry
+    entry.set_text("")
+    table.attach(entry,2,3,8,9)
+
+    label=gtk.Label()
+    label.set_markup("l,r;l,r;...;l,r")
+    table.attach(label,1,2,9,10)
+    entry=gtk.Entry()
+    entry.set_text("")
+    self.entry_xx=entry
+    table.attach(entry,2,3,9,10)
+
+    self.set_editable_all(True)
+
+    vbox.show_all()
+
+  def get_box(self):
+    return self.vbox
+
+  def set_editable_all(self,is_editable):
+    self.entry_page.set_editable(is_editable)
+    self.entry_xx.set_editable(is_editable)
+    self.entry_yy.set_editable(is_editable)
+
+  def get_tabledata(self):
+    valign=self.COMBO_VALIGN[self.entry_valign.get_active()][1]
+    halign=self.COMBO_HALIGN[self.entry_halign.get_active()][1]
+    boxtype=self.COMBO_TYPE[self.entry_type.get_active()][1]
+    hilight=False
+    page=get_int_from_spinbutton(self.entry_page)
+    
+    xx=self.get_grids(self.entry_xx.get_text())
+    yy=self.get_grids(self.entry_yy.get_text())
+    rr=[[BoxData(page,x1,x2,y1,y2) for (x1,x2) in xx]  for (y1,y2) in yy ]
+    for ri in rr:
+      for bi in ri:
+        bi.valign=valign
+        bi.halign=halign
+        bi.type=boxtype
+        bi.hilight=hilight
+    return rr
+
+  def get_grids(self,s):
+    rr=[ si.split(",") for si in s.split(";")]    
+    return [(int(ri[0]),int(ri[-1])) for ri in rr]
+  
 class BoxDataListArea:
   def __init__(self,parent):
     self.parent=parent
@@ -828,20 +939,6 @@ class BoxDataListArea:
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 1)
     
-    tvcolumn = gtk.TreeViewColumn('x')
-    treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
-    tvcolumn.pack_start(cell, True)
-    tvcolumn.add_attribute(cell, 'text', 4)
-    treeview.set_reorderable(True)
-
-    tvcolumn = gtk.TreeViewColumn("x'")
-    treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
-    tvcolumn.pack_start(cell, True)
-    tvcolumn.add_attribute(cell, 'text', 5)
-    treeview.set_reorderable(True)
-
     tvcolumn = gtk.TreeViewColumn('y')
     treeview.append_column(tvcolumn)
     cell = gtk.CellRendererText()
@@ -856,6 +953,21 @@ class BoxDataListArea:
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 7)
     treeview.set_reorderable(True)
+    
+    tvcolumn = gtk.TreeViewColumn('x')
+    treeview.append_column(tvcolumn)
+    cell = gtk.CellRendererText()
+    tvcolumn.pack_start(cell, True)
+    tvcolumn.add_attribute(cell, 'text', 4)
+    treeview.set_reorderable(True)
+
+    tvcolumn = gtk.TreeViewColumn("x'")
+    treeview.append_column(tvcolumn)
+    cell = gtk.CellRendererText()
+    tvcolumn.pack_start(cell, True)
+    tvcolumn.add_attribute(cell, 'text', 5)
+    treeview.set_reorderable(True)
+
 
     tvcolumn = gtk.TreeViewColumn('valign')
     treeview.append_column(tvcolumn)
@@ -977,13 +1089,166 @@ class LayoutOverBoxes(gtk.Layout):
     if self.back_ground_image:
       self.back_ground_image.render(ctx)
     for box in self.projectdata.x_boxdata_in_the_page(self.page):
+      (x1,x2,width,y1,y2,height)=self.projectdata.get_box_coordinate(box)
+      
+      (r,g,b,a)=(0.3, 0.3, 0.6,1.0)
+      ctx.set_source_rgba(r,g,b,a)
+      ctx.select_font_face('Serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+      ctx.set_font_size(12)
+      ctx.move_to(x1, y2)
+      ctx.show_text(box.id)
+      
       if box.hilight:
         (r,g,b,a)=(0.9,0.2,0.4, 0.005)
       else:
         (r,g,b,a)=(1,0.5,0.5, 0.1)
       ctx.set_source_rgba(r,g,b,a)
-      (x1,x2,width,y1,y2,height)=self.projectdata.get_box_coordinate(box)
-      
+
+      ctx.new_path()
+      if box.valign==BoxData.VALIGN_TOP:
+        if box.halign==BoxData.HALIGN_LEFT:
+          a=0.8
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to((x1+x2)/2,y1)                      
+          ctx.line_to(x1, (y1+y2)/2)
+          ctx.stroke()
+          a=0.3
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to((x1+x2)/2,y1)                      
+          ctx.line_to(x1, (y1+y2)/2)
+          ctx.line_to(x1, y1)
+          ctx.close_path()                       
+          ctx.fill()
+
+        elif box.halign==BoxData.HALIGN_RIGHT:
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to((x1+x2)/2,y1)                      
+          ctx.line_to(x2, (y1+y2)/2)
+          ctx.stroke()
+          a=0.3          
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to((x1+x2)/2,y1)                      
+          ctx.line_to(x2, (y1+y2)/2)
+          ctx.line_to(x2, y1)
+          ctx.close_path()                       
+          ctx.fill()
+        else:
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to(x1,y1)
+          ctx.line_to((x1+x2)/2,(y1+y2)/2)
+          ctx.line_to(x2,y1)
+          ctx.stroke()
+          a=0.3
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to(x1,y1)
+          ctx.line_to((x1+x2)/2,(y1+y2)/2)
+          ctx.line_to(x2,y1)
+          ctx.close_path()                       
+          ctx.fill()
+      elif box.valign==BoxData.VALIGN_BOTTOM:
+        if box.halign==BoxData.HALIGN_LEFT:
+          a=0.8
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to((x1+x2)/2,y2)                      
+          ctx.line_to(x1, (y1+y2)/2)
+          ctx.stroke()
+
+          a=0.3
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to((x1+x2)/2,y2)                      
+          ctx.line_to(x1, (y1+y2)/2)
+          ctx.line_to(x1, y2)
+          ctx.close_path()                       
+          ctx.fill()
+
+        elif box.halign==BoxData.HALIGN_RIGHT:
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to((x1+x2)/2,y2)                      
+          ctx.line_to(x2, (y1+y2)/2)
+          ctx.stroke()
+
+          a=0.3
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to((x1+x2)/2,y2)                      
+          ctx.line_to(x2, (y1+y2)/2)
+          ctx.line_to(x2, y2)
+          ctx.close_path()                       
+          ctx.fill()
+        else:
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to(x1,y2)
+          ctx.line_to((x1+x2)/2,(y1+y2)/2)
+          ctx.line_to(x2,y2)
+          ctx.stroke()
+          a=0.3
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to(x1,y2)
+          ctx.line_to((x1+x2)/2,(y1+y2)/2)
+          ctx.line_to(x2,y2)
+          ctx.close_path()                       
+          ctx.fill()
+      else:
+        if box.halign==BoxData.HALIGN_LEFT:
+          a=0.8
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to(x1,y1)
+          ctx.line_to((x1+x2)/2, (y1+y2)/2)
+          ctx.line_to(x1,y2)
+          ctx.stroke()
+          a=0.3
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to(x1,y1)
+          ctx.line_to((x1+x2)/2, (y1+y2)/2)
+          ctx.line_to(x1,y2)
+          ctx.close_path()                       
+          ctx.fill()
+          
+        elif box.halign==BoxData.HALIGN_RIGHT:
+          a=0.8
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to(x2,y1)
+          ctx.line_to((x1+x2)/2, (y1+y2)/2)
+          ctx.line_to(x2,y2)
+          ctx.stroke()
+          a=0.3
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to(x2,y1)
+          ctx.line_to((x1+x2)/2, (y1+y2)/2)
+          ctx.line_to(x2,y2)
+          ctx.close_path()                       
+          ctx.fill()
+
+        else:
+          a=0.8
+          ctx.set_source_rgba(r,g,b,a)
+          ctx.new_path()
+          ctx.move_to(x1+0.4*width,(y1+y2)/2)
+          ctx.line_to(x2-0.4*width,(y1+y2)/2)
+          ctx.stroke()
+          ctx.new_path()
+          ctx.move_to((x1+x2)/2,y1+0.35*height)
+          ctx.line_to((x1+x2)/2,y2-0.35*height)
+          ctx.stroke()
+
+
+      a=0.1
+      ctx.set_source_rgba(r,g,b,a)
       ctx.new_path()
       ctx.move_to(x1, y1)                      
       ctx.rel_line_to(width, 0)       
@@ -994,6 +1259,7 @@ class LayoutOverBoxes(gtk.Layout):
 
       a=0.8
       ctx.set_source_rgba(r,g,b,a)
+      ctx.set_line_width(0.5)
       ctx.new_path()                         
       ctx.move_to(x1, y1)                      
       ctx.rel_line_to(width, 0)       
@@ -1014,66 +1280,8 @@ class LayoutOverBoxes(gtk.Layout):
       w=int(width*2/3)
       d=-int(width/10)
       dy=int(height/6)
-      if box.valign==BoxData.VALIGN_TOP:
-        y=y1
-      elif box.valign==BoxData.VALIGN_BOTTOM:
-        y=y2
-        dy=-dy
-      else:
-        y=y1+height/6
-
-      if box.halign==BoxData.HALIGN_LEFT:
-        x=x1
-        dd=0
-      elif box.halign==BoxData.HALIGN_RIGHT:
-        x=x2
-        w=-w
-        d=-d
-        dd=0
-      else:
-        x=x1+width/6
-        dd=-d
-
-      a=0.8
-      ctx.set_source_rgba(r,g,b,a)
-      ctx.new_path()                         
-      ctx.move_to(x,y)                      
-      ctx.rel_line_to(w, 0)       
-      ctx.rel_line_to(-d, dy)      
-      ctx.rel_line_to(d, dy)      
-      ctx.rel_line_to(-d, dy)      
-      ctx.rel_line_to(d, dy)      
-      ctx.rel_line_to(-w, 0)  
-      ctx.rel_line_to(-dd, -dy)      
-      ctx.rel_line_to(dd, -dy)      
-      ctx.rel_line_to(-dd, -dy)      
-      ctx.rel_line_to(dd, -dy)      
-      ctx.stroke()
-
-      a=0.05
-      ctx.set_source_rgba(r,g,b,a)
-      ctx.new_path()
-      ctx.move_to(x,y)
-      ctx.rel_line_to(w, 0)       
-      ctx.rel_line_to(-d, dy)      
-      ctx.rel_line_to(d, dy)      
-      ctx.rel_line_to(-d, dy)      
-      ctx.rel_line_to(d, dy)      
-      ctx.rel_line_to(-w, 0)  
-      ctx.rel_line_to(-dd, -dy)      
-      ctx.rel_line_to(dd, -dy)      
-      ctx.rel_line_to(-dd, -dy)      
-      ctx.rel_line_to(dd, -dy)      
-      ctx.close_path()                       
-      ctx.fill()
 
 
-      (r,g,b,a)=(0.3, 0.3, 0.6,1.0)
-      ctx.set_source_rgba(r,g,b,a)
-      ctx.select_font_face('Serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-      ctx.set_font_size(12)
-      ctx.move_to(x1, y2)
-      ctx.show_text(box.name)
 
 class Bar(gtk.DrawingArea):
   def __init__(self,direction,margin):
@@ -1448,6 +1656,7 @@ class BarOnLayout(gtk.EventBox):
 
 
 ##################
+
 class BoxDataDialog(gtk.Dialog):
   def __init__(self,title=None, parent=None, flags=0, buttons=None,boxdata=None,message="",projectdata=None):
     gtk.Dialog.__init__(self,title,parent,flags,buttons)
@@ -1457,6 +1666,14 @@ class BoxDataDialog(gtk.Dialog):
   def get_boxdata(self):
     return self.area.update_and_get_boxdata()
 
+class TableDataDialog(gtk.Dialog):
+  def __init__(self,title=None, parent=None, flags=0, buttons=None,message="",projectdata=None,current_page=0):
+    gtk.Dialog.__init__(self,title,parent,flags,buttons)
+    self.area=TableDataEntryArea(message,projectdata,current_page)
+    self.vbox.pack_start(self.area.get_box())
+
+  def get_tabledata(self):
+    return self.area.get_tabledata()
 
 class HoganDialog(gtk.Dialog):
   def __init__(self,title=None, parent=None, flags=0, buttons=None, projectdata=None,p=0):
@@ -1881,16 +2098,20 @@ class AFMMainArea:
     listarea.get_buttonbox().pack_start(hbbox,expand=False, fill=False)
 
     hbbox.set_layout(gtk.BUTTONBOX_END)
-    button = gtk.Button("Show Grids/Preview")
-    button.connect('clicked', self.on_click_preview)
+    button = gtk.Button("Add a table")
+    button.connect('clicked', self.on_click_addtable)
     hbbox.add(button)
-    self.open_preview_button=button
 
 
     hbbox = gtk.HButtonBox() 
     listarea.get_vbox().pack_start(hbbox,expand=False, fill=False)
     hbbox.set_layout(gtk.BUTTONBOX_END)
 
+    hbbox.set_layout(gtk.BUTTONBOX_END)
+    button = gtk.Button("Show Grids/Preview")
+    button.connect('clicked', self.on_click_preview)
+    hbbox.add(button)
+    self.open_preview_button=button
     
     button = gtk.Button(stock=gtk.STOCK_SAVE_AS)
     button.connect('clicked', self.on_click_save_as)
@@ -1923,7 +2144,8 @@ class AFMMainArea:
     self.open_preview_button.set_sensitive(False)
     if self.preview == None:
       self.open_preview_dialog()
-      
+
+  
   def on_click_save_as(self,widget):
     dialog = gtk.FileChooserDialog('Select zip file to save.',None,
                                    action=gtk.FILE_CHOOSER_ACTION_SAVE,
@@ -1956,7 +2178,7 @@ class AFMMainArea:
     rootdir=os.path.splitext(os.path.basename(destzipfilename))[0]
     destzip=zipfile.ZipFile(destzipfilename,'w')
     self.projectdata.output_to_zipfile(destzip,rootdir)
-    gtk.main_quit()
+    #gtk.main_quit()
 
   def refresh_preview(self):
       if self.preview:
@@ -1996,12 +2218,29 @@ class AFMMainArea:
     
     return BoxData(p,x1,x2,y1,y2)
   
+  def on_click_addtable(self,widget):
+    self.confirm_and_addtable()
+    
+  def confirm_and_addtable(self):
+    title="New Table."
+    message="Add boxes:"
+    p=0
+    if self.preview != None:
+      p=self.preview.get_currentpage()
+    tabledata=self.get_tabledata_by_dialog(title,message,p)
+    if tabledata:
+      for row in tabledata:
+        for boxdata in row:
+          self.listarea.append_boxdata(boxdata)
+          self.projectdata.add_boxdata(boxdata)
+      self.refresh_preview()
+
+  
   def on_click_new(self,widget):
-
     boxdata=self.get_initial_boxdata()
-    self.conform_and_add(boxdata)
+    self.confirm_and_add(boxdata)
 
-  def conform_and_add(self,boxdata):
+  def confirm_and_add(self,boxdata):
     title="New box."
     message="Add the following box:"
     boxdata=self.get_valid_boxdata_by_dialog(boxdata,title,message)
@@ -2015,9 +2254,9 @@ class AFMMainArea:
     if not boxids:
       return
     for (itera,boxid,) in zip(iteralist,boxids):
-      self.conform_and_remove_by_id(boxid,model,itera)
+      self.confirm_and_remove_by_id(boxid,model,itera)
 
-  def conform_and_remove_by_id(self,boxid,model,itera):
+  def confirm_and_remove_by_id(self,boxid,model,itera):
     if not boxid:
       return
     boxdata=self.projectdata.get_boxdata_by_id(boxid)
@@ -2048,12 +2287,24 @@ class AFMMainArea:
         model.remove(itera)
         self.listarea.append_boxdata(boxdata)
 
+  def get_tabledata_by_dialog(self,title,message,current_page):
+    mode=gtk.DIALOG_DESTROY_WITH_PARENT|gtk.DIALOG_MODAL
+    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+             gtk.STOCK_OK, gtk.RESPONSE_ACCEPT)                           
+    dialog=TableDataDialog(title,None,mode,buttons,message,self.projectdata,current_page)
+    r = dialog.run()
+    if r==gtk.RESPONSE_ACCEPT:
+      tabledata=dialog.get_tabledata()
+    else:
+      tabledata=None
+    dialog.destroy()
+    return tabledata
+
   def get_boxdata_by_dialog(self,boxdata,title,message):
-    dialog=BoxDataDialog(title,None,
-                        gtk.DIALOG_DESTROY_WITH_PARENT|gtk.DIALOG_MODAL,
-                        (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                         gtk.STOCK_OK, gtk.RESPONSE_ACCEPT),
-                         boxdata,message,self.projectdata)
+    mode=gtk.DIALOG_DESTROY_WITH_PARENT|gtk.DIALOG_MODAL
+    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+             gtk.STOCK_OK, gtk.RESPONSE_ACCEPT)
+    dialog=BoxDataDialog(title,None,mode,buttons,boxdata,message,self.projectdata)
 
     r = dialog.run()
     if r==gtk.RESPONSE_ACCEPT:
