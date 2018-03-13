@@ -28,9 +28,9 @@ class applicationFormData:
   def int2alphabet(self,n):
     r=""
     while n>19:
-      r=chr(ord('a')+(n%20))+r
+      r=chr(ord('A')+(n%20))+r
       n=(n-(n%20))//20
-    return  chr(ord('a')+n)+r
+    return  chr(ord('A')+n)+r
   
   def create_bgimage_file(self,pdffullpath,destzip,rootdir):    
     destzip.write(pdffullpath,os.path.join(rootdir,self.pdffilename()))
@@ -44,6 +44,17 @@ class applicationFormData:
     self.SUFFIX_SETVARAT="@nu"
     self.PREFIX_ROUNDRECTANGLEAT=""
     self.SUFFIX_ROUNDRECTANGLEAT="@roundrectangle@nu"
+    self.PREFIX_TABLEAT="@table@"
+    self.SUFFIX_TABLEAT="@nu"
+    self.PREFIX_TABLEROWAT="@table@row@"
+    self.SUFFIX_TABLEROWAT="@nu"
+    self.PREFIX_TABLE="tableform"
+    self.SUFFIX_TABLE=""
+    self.PREFIX_TABLECOL="col"
+    self.SUFFIX_TABLECOL=""
+    self.PREFIX_TABLECOLAT="@table@col@"
+    self.SUFFIX_TABLECOLAT="@nu"
+    self.FINALROW_HOOK_NAME="\\final@row@hook@nu"
     self.bgfilename=self.projectdata.bgimagepath
 
   def get_boundingboxstring(self,n):
@@ -60,17 +71,56 @@ class applicationFormData:
   def setvarATname(self,name):
     return "\\"+self.PREFIX_SETVARAT+name+self.SUFFIX_SETVARAT
   def roundrectangleATname(self,name):
-    return "\\"+self.PREFIX_ROUNDRECTANGLEAT+name+self.SUFFIX_ROUNDRECTANGLEAT    
+    return "\\"+self.PREFIX_ROUNDRECTANGLEAT+name+self.SUFFIX_ROUNDRECTANGLEAT
+  def tablerowsATname(self,i):
+    return "\\"+self.PREFIX_TABLEROWAT+self.int2alphabet(i)+self.SUFFIX_TABLEROWAT
+  def tableATname(self,i):
+    return  "\\"+self.PREFIX_TABLEAT+self.int2alphabet(i)+self.SUFFIX_TABLEAT
+  def tablename(self,i):
+    return self.PREFIX_TABLE+self.int2alphabet(i)+self.SUFFIX_TABLE
+  def tablecolname(self,i):
+    return "\\"+self.PREFIX_TABLECOL+self.int2alphabet(i)+self.SUFFIX_TABLECOL
+  def tablecolATname(self,i):
+    return "\\"+self.PREFIX_TABLECOLAT+self.int2alphabet(i)+self.SUFFIX_TABLECOLAT
 
-  def form_sample(self,boxdata):
+  def form_table_sample(self,tabledata):
     r=""
+    r=r +r'\begin{'
+    r=r +self.tablename(tabledata.id_as_int)
+    r=r +r'}'
+    r=r +'\n'
+    for ri in tabledata.table:
+      for j,rij in enumerate(ri):
+        boxdata=self.projectdata.get_boxdata_by_id(rij)
+        r=r +r' '
+        if boxdata.type==BoxData.TYPE_ENVIRONMENT:
+          r=r +r'% '
+        r=r + self.tablecolname(j)
+        r=r +r'{'
+        r=r +boxdata.sampletext
+        r=r +r'}'+'\n'
+      r=r +r'\nextrow'+'\n'
+    r=r +r'\end{'
+    r=r +self.tablename(tabledata.id_as_int)
+    r=r +r'}'
+    return r
+
+  
+  def form_sample(self,boxdata,as_comment):
+    r=""
+    if as_comment:
+      r="% "
+      bl='\n% '
+    else:
+      bl='\n'
+    
     if boxdata.type==BoxData.TYPE_ENVIRONMENT:
       r=r +r'\begin{'
       r=r + boxdata.name
       r=r +r'}'
-      r=r +'\n'
+      r=r +bl
       r=r + boxdata.sampletext
-      r=r +'\n'
+      r=r +bl
       r=r +r'\end{'
       r=r + boxdata.name
       r=r +r'}'
@@ -316,9 +366,58 @@ class applicationFormData:
       r=r +r'}'
     r=r +r'}'
     return r
+  def tablerowdef(self,tabledata):
+    r=''
+    l=len(tabledata.table)
+    for i,ri in enumerate(tabledata.table):
+      r=r +r'\def'
+      r=r + self.tablerowsATname(i)
+      r=r +r'{'
+      for j,rij in enumerate(ri):
+        r=r +r'\def'
+        r=r + self.tablecolATname(j)
+        r=r +r'{'
+        r=r +'\\'
+        r=r +self.projectdata.get_boxdata_by_id(rij).name 
+        r=r +r'}'
+      if l-1==i:
+        r=r +r'\def\nextrow{'
+        r=r +self.FINALROW_HOOK_NAME
+        r=r + self.tablerowsATname(0)
+        r=r +r'}'
+      else:
+        r=r +r'\def\nextrow{'
+        r=r + self.tablerowsATname(i+1)
+        r=r +r'}'
+      r=r+r"}"+"\n"            
+    r=r + self.tablerowsATname(0)
+    return r
+  
 
-
-
+  def tablebackenddef(self,tabledata):
+    r=""
+    r=r +r'\newcommand{'
+    r=r + self.tableATname(tabledata.id_as_int)
+    r=r +r'}{%'+'\n'
+    r=r + self.tablerowdef(tabledata)
+    r=r +r"%"+'\n'+r"}"
+    return r
+  def tablefrontenddef(self,tabledata):
+    r=""
+    r=r +r'\newenvironment{'
+    r=r +self.tablename(tabledata.id_as_int)
+    r=r +r'}{'
+    r=r + self.tableATname(tabledata.id_as_int)+"\n"
+    r=r +r'\def'
+    r=r+self.FINALROW_HOOK_NAME+"{}\n"
+    for i,ri in enumerate(tabledata.table[0]):
+        r=r +r'\def'
+        r=r + self.tablecolname(i)
+        r=r +r'{'
+        r=r + self.tablecolATname(i)
+        r=r +r'}'+"\n"
+    r=r +r'}{}'
+    return r
 
   def page_atfirst(self,n):
     return r'\pageNo'+self.int2alphabet(n)+r'AtFirst'
@@ -479,14 +578,22 @@ class applicationFormData:
         form_front=form_front+"\n\n"+self.formfrontenddef(boxdata)
         form_front=form_front+"\n"
         
-
+    table_backend=""
+    table_front=""
+    for tabledata in self.projectdata.tables:
+      table_backend=table_backend+"\n"+self.tablebackenddef(tabledata)
+      table_front=table_front+"\n"+self.tablefrontenddef(tabledata)
     r=r+page_def
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+    r=r+table_backend
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Definition of each box\n"
     r=r+"% Set vars for x, y, pos, width, height.\n"
 
     r=r+form_front
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     r=r+page_atfirst
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+    r=r+table_front
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     return r
 
@@ -525,11 +632,18 @@ class applicationFormData:
       r=r+r'}'
       r=r+"\n"
       for boxdata in self.projectdata.x_boxdata_in_the_page(i):
-        r=r+"\n"+self.form_sample(boxdata)
+        if boxdata.type!=BoxData.TYPE_ENVIRONMENT and self.projectdata.table_contains(boxdata):
+          r=r+"\n"+self.form_sample(boxdata,True)
+        else:
+          r=r+"\n"+self.form_sample(boxdata,False)
+      r=r+"\n"
+      for tabledata in self.projectdata.x_tabledata_in_the_page(i):
+        r=r+"\n"+self.form_table_sample(tabledata)
       r=r+"\n"+r'\end{'
       r=r+self.pagename_frontend(i)
       r=r+r'}'
       r=r+"\n\n"
+    
     r=r+r'\end{document}'
     return r
 
@@ -558,6 +672,36 @@ class GridData:
   @classmethod
   def construct_from_dictionary(cls,d):
     return GridData(d["page"], d["value"],d["is_horizontal"],d["id"])
+
+class TableData:
+  serialnum=0
+  def int2alphabet(self,n):
+    r=""
+    while n>19:
+      r=chr(ord('a')+(n%20))+r
+      n=(n-(n%20))//20
+    return  chr(ord('a')+n)+r
+  
+  def __init__(self,table_of_id,id_as_int=None):
+    if id_as_int==None:
+      self.id_as_int=TableData.serialnum
+      BoxData.serialnum=TableData.serialnum+1
+    else:
+      self.id_as_int=id_as_int
+      BoxData.serialnum=max(TableData.serialnum,id_as_int)+1
+    self.id=self.int2alphabet(self.id_as_int)
+    self.table=[[rij for rij in ri] for ri in table_of_id]
+    
+  def dump_as_dictionary(self):
+    d={}
+    d["id_as_int"]=self.id_as_int
+    d["table"]=self.table
+    return d
+  @classmethod
+  def construct_from_dictionary(cls,d):
+    r=TableData(d["table"],d["id_as_int"])
+    return r
+
 class BoxData:
   serialnum=0
   VALIGN_TOP=1
@@ -584,13 +728,6 @@ class BoxData:
       r=chr(ord('a')+(n%20))+r
       n=(n-(n%20))//20
     return  chr(ord('a')+n)+r
-
-  def get_similar_boxdata(self):
-    bd=BoxData(self.page,self.x,self.y,self.width,self.height)
-    bd.valign=self.valign
-    bd.halign=self.halign
-    bd.type=self.type
-    return bd
 
 
   def __init__(self,page,x1,x2,y1,y2,id_as_int=None):
@@ -724,22 +861,31 @@ class BoxDataEntryArea:
     table.attach(entry,2,3,7,8)
 
     label=gtk.Label()
-    label.set_markup("left")
+    label.set_markup("top")
     table.attach(label,1,2,8,9)
+    adjustment = gtk.Adjustment(value=boxdata.y_1,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
+    entry=gtk.SpinButton(adjustment)
+    entry.set_value(boxdata.y_1)
+    self.entry_y1=entry
+    table.attach(entry,2,3,8,9)
+    
+    label=gtk.Label()
+    label.set_markup("bottom")
+    table.attach(label,1,2,9,10)
+    adjustment = gtk.Adjustment(value=boxdata.y_2,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
+    entry=gtk.SpinButton(adjustment)
+    entry.set_value(boxdata.y_2)
+    self.entry_y2=entry
+    table.attach(entry,2,3,9,10)
+
+    label=gtk.Label()
+    label.set_markup("left")
+    table.attach(label,1,2,10,11)
     adjustment = gtk.Adjustment(value=boxdata.x_1,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
 
     entry=gtk.SpinButton(adjustment)
     entry.set_value(boxdata.x_1)
     self.entry_x1=entry
-    table.attach(entry,2,3,8,9)
-
-    label=gtk.Label()
-    label.set_markup("bottom")
-    table.attach(label,1,2,10,11)
-    adjustment = gtk.Adjustment(value=boxdata.y_2,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
-    entry=gtk.SpinButton(adjustment)
-    entry.set_value(boxdata.y_2)
-    self.entry_y2=entry
     table.attach(entry,2,3,10,11)
 
     label=gtk.Label()
@@ -750,16 +896,6 @@ class BoxDataEntryArea:
     entry.set_value(boxdata.x_2)
     self.entry_x2=entry
     table.attach(entry,2,3,11,12)
-
-    label=gtk.Label()
-    label.set_markup("top")
-    table.attach(label,1,2,12,13)
-    adjustment = gtk.Adjustment(value=boxdata.y_1,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
-    entry=gtk.SpinButton(adjustment)
-    entry.set_value(boxdata.y_1)
-    self.entry_y1=entry
-    table.attach(entry,2,3,12,13)
-
 
     self.set_editable_all(True)
 
@@ -899,7 +1035,8 @@ class TableDataEntryArea:
         bi.halign=halign
         bi.type=boxtype
         bi.hilight=hilight
-    return rr
+    rt=TableData([[ rij.id for rij in ri] for ri in rr])
+    return (rr,rt)
 
   def get_grids(self,s):
     rr=[ si.split(",") for si in s.split(";")]    
@@ -999,8 +1136,6 @@ class BoxDataListArea:
     tvcolumn.add_attribute(cell, 'text', 2)
     treeview.set_reorderable(True)
     
-
-
     sw = gtk.ScrolledWindow()
     sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
     sw.add(treeview) 
@@ -1936,6 +2071,10 @@ class ProjectData:
       self.grids=[GridData.construct_from_dictionary(d) for d in prev_proj["grids"]]
     else:
       self.grids=[]
+    if "tables" in prev_proj:
+      self.tables=[TableData.construct_from_dictionary(d) for d in prev_proj["tables"]]
+    else:
+      self.tables=[]
     
 
   def set_document(self,uri):    
@@ -1974,12 +2113,26 @@ class ProjectData:
 
   def x_boxdata_in_the_page(self,i):
     for boxdata in self.boxes:
-        if boxdata.page==i:
-          yield boxdata
+      if boxdata.page==i:
+        yield boxdata
+  def x_tabledata_in_the_page(self,i):
+    for tabledata in self.tables:
+      boxdata=self.get_boxdata_by_id(tabledata.table[0][0])
+      if boxdata.page==i:
+        yield tabledata
+  def table_contains(self,boxdata):
+    for tabledata in self.tables:
+      for ri in tabledata.table:
+        for rij in ri:
+          if rij==boxdata.id:
+            return True
+    return False
 
-  
   def add_boxdata(self,boxdata):
     self.boxes.append(boxdata)
+
+  def add_tabledata(self,tabledata):
+    self.tables.append(tabledata)
 
   def add_grid(self,grid_data):
     self.grids.append(grid_data)
@@ -2009,6 +2162,7 @@ class ProjectData:
         return boxdata
     return None
 
+                                     
   def get_box_coordinate(self,box):
     a=self.get_grid_coordinate_by_id(box.x_1)
     b=self.get_grid_coordinate_by_id(box.x_2)
@@ -2075,6 +2229,7 @@ class ProjectData:
     d["jsonpath"]=self.jsonpath
     d["boxes"]=[box.dump_as_dictionary() for box in self.boxes]
     d["grids"]=[grid.dump_as_dictionary() for grid in self.grids]
+    d["tables"]=[table.dump_as_dictionary() for table in self.tables]
     return d
   
   def dump_as_json(self):
@@ -2227,12 +2382,14 @@ class AFMMainArea:
     p=0
     if self.preview != None:
       p=self.preview.get_currentpage()
-    tabledata=self.get_tabledata_by_dialog(title,message,p)
-    if tabledata:
-      for row in tabledata:
+    t=self.get_tabledata_by_dialog(title,message,p)
+    if t:
+      (boxes,tabledata)=t
+      for row in boxes:
         for boxdata in row:
           self.listarea.append_boxdata(boxdata)
           self.projectdata.add_boxdata(boxdata)
+      self.projectdata.add_tabledata(tabledata)
       self.refresh_preview()
 
   
@@ -2361,9 +2518,12 @@ if __name__ == "__main__":
   if len(sys.argv)>1 :
     uri='file://'+urllib.pathname2url(os.path.abspath(sys.argv[1]))
   if not uri:
-    dialog = gtk.FileChooserDialog('Choose pdf file.',None,
-                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                         gtk.STOCK_OPEN, gtk.RESPONSE_ACCEPT))
+    dialog = gtk.FileChooserDialog('Choose pdf file.',
+                                   None,
+                                   buttons=(gtk.STOCK_CANCEL,
+                                            gtk.RESPONSE_REJECT,
+                                            gtk.STOCK_OPEN,
+                                            gtk.RESPONSE_ACCEPT))
     filter = gtk.FileFilter()
     filter.set_name("PDF files")
     filter.add_mime_type("application/pdf")
