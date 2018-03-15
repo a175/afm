@@ -495,6 +495,10 @@ class applicationFormData:
 % Please redefine \baseuplength
 % if you want to move background image up.
 %
+% Boxcommands, e.g. \boxIDa, 
+% between \begin{groupedcolumns} and \end{groupedcolumns}
+% use common top margin.
+% The command \nextrow in the environment updates the margin.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Definition of basic commands
 \NeedsTeXFormat{LaTeX2e}
@@ -516,8 +520,6 @@ class applicationFormData:
 \else 
 \newcommand{\unitlength@nu}{'''+str(self.UNITLENGTH)+r'''pt}
 \fi
-
-\newcommand{\baseuplength}{-10}
 
 \newenvironment{overwrappicture}[2][]%
 {\newpage\noindent%
@@ -545,15 +547,53 @@ class applicationFormData:
 \newcommand{\my@temp@var@p}{}
 \newlength{\my@temp@var@w}
 \newlength{\my@temp@var@h}
-\newbox{\MyBlackBox@nu}
 \newcommand{\set@my@temp@var}[5]{\def\my@temp@var@x{#1}\def\my@temp@var@y{#2}\def\my@temp@var@p{[#3]}\setlength{\my@temp@var@w}{#4}\setlength{\my@temp@var@h}{#5}}
 
-\newenvironment{put@@box@env@nu}{\begin{lrbox}{\MyBlackBox@nu}\begin{minipage}[c]{\my@temp@var@w}}{\end{minipage}\end{lrbox}\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\usebox{\MyBlackBox@nu}}}
-\newcommand{\put@@box@com@nu}[1]{\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\begin{minipage}[c]{\my@temp@var@w}#1\end{minipage}}}
-\newcommand{\put@@box@rule@nu}{\put@@box@com@nu{\rule{\my@temp@var@w}{\my@temp@var@h}}}
+\newlength{\@var@margin@top@nu}
+\newlength{\@var@max@height@nu}
+\newlength{\@var@max@depth@nu}
+\setlength{\@var@margin@top@nu}{0pt}
+\setlength{\@var@max@height@nu}{0pt}
+\setlength{\@var@max@depth@nu}{0pt}
+\newcommand{\update@max@height@depth@nu}[1]{%
+  \ifdim\ht#1>\@var@max@height@nu%
+    \global\setlength{\@var@max@height@nu}{\ht#1}%
+  \fi%
+  \ifdim\dp#1>\@var@max@depth@nu%
+    \global\setlength{\@var@max@depth@nu}{\dp#1}%
+\fi}
+
+\newbox{\MyBlackBox@nu}
+\newenvironment{put@@box@env@nu}{\begin{lrbox}{\MyBlackBox@nu}\begin{minipage}[c]{\my@temp@var@w}\vspace{\@var@margin@top@nu}}{\end{minipage}\end{lrbox}\update@max@height@depth@nu{\MyBlackBox@nu}\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\usebox{\MyBlackBox@nu}}}
+\newcommand{\put@@box@com@nu}[1]{\begin{put@@box@env@nu}#1\end{put@@box@env@nu}}
 \newcommand{\put@@box@strike@nu}{\put@@box@com@nu{\rule[0.22\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\kern -\my@temp@var@w\rule[0.6\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\rule{0pt}{\my@temp@var@h}}}
 \newcommand{\put@@box@checkmark@nu}{\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\begin{minipage}[c]{\my@temp@var@w}\centering$\checkmark$\end{minipage}}}
 
+
+
+\newlength{\@temp@var@margin@top@nu}
+\newcommand{\nextrow@groupedcell@nu}{%
+    \setlength{\@temp@var@margin@top@nu}{\@var@margin@top@nu}
+    \addtolength{\@temp@var@margin@top@nu}{\baselineskip}
+    \setlength{\@var@margin@top@nu}{\default@line@skip@nu}
+    \addtolength{\@var@margin@top@nu}{\@var@max@height@nu}
+    \addtolength{\@var@margin@top@nu}{\@var@max@depth@nu}
+    \ifdim\@temp@var@margin@top@nu>\@var@margin@top@nu
+      \setlength{\@var@margin@top@nu}{\@temp@var@margin@top@nu}
+    \fi
+      \setlength{\@var@max@height@nu}{0pt}
+    \setlength{\@var@max@depth@nu}{0pt}}
+\newenvironment{groupedcell@nu}{
+  \setlength{\@var@margin@top@nu}{0pt}
+  \setlength{\@var@max@height@nu}{0pt}
+  \setlength{\@var@max@depth@nu}{0pt}
+  \def\nextrow{\nextrow@groupedcell@nu}
+}{}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some Parameters
+\newcommand{\baseuplength}{-10}
+\newcommand{\default@line@skip@nu}{0.5\baselineskip}
+\newenvironment{groupedcolumns}{\begin{groupedcell@nu}}{\end{groupedcell@nu}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 '''
   
