@@ -14,6 +14,7 @@ import os
 import urllib
 import urlparse
 import json
+import re
 
 def get_int_from_spinbutton(spinbutton):
   if spinbutton.get_text():
@@ -40,21 +41,28 @@ class applicationFormData:
     self.UNITLENGTH=1.0
     self.XMARGIN=1.0
     self.YMARGIN=1.0
-    self.PREFIX_SETVARAT="@set@temp@vars"
-    self.SUFFIX_SETVARAT="@nu"
+    self.PREFIX_SETVARAT="@set@temp@vars@"
+    self.SUFFIX_SETVARAT=""
     self.PREFIX_ROUNDRECTANGLEAT=""
-    self.SUFFIX_ROUNDRECTANGLEAT="@roundrectangle@nu"
+    self.SUFFIX_ROUNDRECTANGLEAT="@roundrectangle"
     self.PREFIX_TABLEAT="@table@"
-    self.SUFFIX_TABLEAT="@nu"
+    self.SUFFIX_TABLEAT=""
     self.PREFIX_TABLEROWAT="@table@row@"
-    self.SUFFIX_TABLEROWAT="@nu"
+    self.SUFFIX_TABLEROWAT=""
     self.PREFIX_TABLE="tableform"
     self.SUFFIX_TABLE=""
     self.PREFIX_TABLECOL="col"
     self.SUFFIX_TABLECOL=""
     self.PREFIX_TABLECOLAT="@table@col@"
-    self.SUFFIX_TABLECOLAT="@nu"
-    self.FINALROW_HOOK_NAME="\\final@row@hook@nu"
+    self.SUFFIX_TABLECOLAT=""
+    self.SUFFIX_PAGEATFIRST="@at@first@"
+    self.SUFFIX_PAGENONEAT="@none@"
+    self.SUFFIX_PAGEPDFAT="@pdf@"
+    self.PREFIX_PAGENAMEBASE="pageNo"
+    self.SUFFIX_PAGENAMEBASE=""
+    
+    self.FINALROW_HOOK_NAME="\\final@row@hook"
+    self.SUFFIX_LOCALCOMMANDS="@"+projectdata.localcommandsuffix+"@nu@"
     self.bgfilename=self.projectdata.bgimagepath
 
   def get_boundingboxstring(self,n):
@@ -68,21 +76,38 @@ class applicationFormData:
     return self.dtppt2texpt(dtp_pt)/self.UNITLENGTH
   def dtppt2unitlength_as_str(self,dtp_pt):
     return str(self.dtppt2unitlength(dtp_pt))
+  
   def setvarATname(self,name):
-    return "\\"+self.PREFIX_SETVARAT+name+self.SUFFIX_SETVARAT
+    return "\\"+self.PREFIX_SETVARAT+name+self.SUFFIX_SETVARAT+'@'+self.SUFFIX_LOCALCOMMANDS
   def roundrectangleATname(self,name):
-    return "\\"+self.PREFIX_ROUNDRECTANGLEAT+name+self.SUFFIX_ROUNDRECTANGLEAT
+    return "\\"+self.PREFIX_ROUNDRECTANGLEAT+name+self.SUFFIX_ROUNDRECTANGLEAT+'@'+self.SUFFIX_LOCALCOMMANDS
   def tablerowsATname(self,i):
-    return "\\"+self.PREFIX_TABLEROWAT+self.int2alphabet(i)+self.SUFFIX_TABLEROWAT
+    return "\\"+self.PREFIX_TABLEROWAT+self.int2alphabet(i)+self.SUFFIX_TABLEROWAT+'@'+self.SUFFIX_LOCALCOMMANDS
   def tableATname(self,i):
-    return  "\\"+self.PREFIX_TABLEAT+self.int2alphabet(i)+self.SUFFIX_TABLEAT
+    return  "\\"+self.PREFIX_TABLEAT+self.int2alphabet(i)+self.SUFFIX_TABLEAT+'@'+self.SUFFIX_LOCALCOMMANDS
   def tablename(self,i):
     return self.PREFIX_TABLE+self.int2alphabet(i)+self.SUFFIX_TABLE
   def tablecolname(self,i):
     return "\\"+self.PREFIX_TABLECOL+self.int2alphabet(i)+self.SUFFIX_TABLECOL
   def tablecolATname(self,i):
-    return "\\"+self.PREFIX_TABLECOLAT+self.int2alphabet(i)+self.SUFFIX_TABLECOLAT
+    return "\\"+self.PREFIX_TABLECOLAT+self.int2alphabet(i)+self.SUFFIX_TABLECOLAT+'@'+self.SUFFIX_LOCALCOMMANDS
 
+  def pagename_base(self,n):
+    return self.PREFIX_PAGENAMEBASE+self.int2alphabet(n)+self.SUFFIX_PAGENAMEBASE
+  
+  def page_atfirst(self,n):
+    return "\\"+self.pagename_base(n)+self.SUFFIX_PAGEATFIRST+'@'+self.SUFFIX_LOCALCOMMANDS
+  def pagename_none(self,n):
+    return self.pagename_base(n)+self.SUFFIX_PAGENONEAT+'@'+self.SUFFIX_LOCALCOMMANDS
+  def pagename_pdf(self,n):
+    return self.pagename_base(n)+self.SUFFIX_PAGEPDFAT+'@'+self.SUFFIX_LOCALCOMMANDS
+  
+  def pagename_frontend(self,n):
+    return self.pagename_base(n)
+
+  def pdffilename(self):
+    return self.projectdata.bgimagepath
+  
   def form_table_sample(self,tabledata):
     r=""
     r=r +r'\begin{'
@@ -150,8 +175,9 @@ class applicationFormData:
     r=r + name
     r=r +r'}{'
     r=r + self.setvarATname(name)
-    r=r +r'\begin{put@@box@env@nu}}{\end{put@@box@env@nu}}'
+    r=r +r'\begin{put@l@box@env@nu}}{\end{put@l@box@env@nu}}'
     return r
+  
   def formfrontenddef_env_r(self,name,as_comment=False):
     if as_comment:
       r="% "
@@ -161,7 +187,7 @@ class applicationFormData:
     r=r + name
     r=r +r'}{'
     r=r + self.setvarATname(name)
-    r=r +r'\begin{put@@box@env@nu}\begin{flushright}}{\end{flushright}\end{put@@box@env@nu}}'
+    r=r +r'\begin{put@r@box@env@nu}}{\end{put@r@box@env@nu}}'
     return r
   def formfrontenddef_env_c(self,name,as_comment=False):
     if as_comment:
@@ -172,7 +198,7 @@ class applicationFormData:
     r=r +name
     r=r +r'}{'
     r=r + self.setvarATname(name)
-    r=r +r'\begin{put@@box@env@nu}\begin{center}}{\end{center}\end{put@@box@env@nu}}'
+    r=r +r'\begin{put@c@box@env@nu}}{\end{put@c@box@env@nu}}'
     return r
   def formfrontenddef_com_l(self,name,as_comment=False):
     if as_comment:
@@ -183,7 +209,7 @@ class applicationFormData:
     r=r +name
     r=r +r'}[1]{'
     r=r + self.setvarATname(name)
-    r=r +r'\put@@box@com@nu{#1}}'
+    r=r +r'\put@l@box@com@nu{#1}}'
     return r
   def formfrontenddef_com_c(self,name,as_comment=False):
     if as_comment:
@@ -195,7 +221,7 @@ class applicationFormData:
     r=r +name
     r=r +r'}[1]{'
     r=r + self.setvarATname(name)
-    r=r +r'\put@@box@com@nu{\begin{center}#1\end{center}}}'
+    r=r +r'\put@c@box@com@nu{#1}}'
     return r
   def formfrontenddef_com_r(self,name,as_comment=False):
     if as_comment:
@@ -207,7 +233,7 @@ class applicationFormData:
     r=r + name
     r=r +r'}[1]{'
     r=r + self.setvarATname(name)
-    r=r +r'\put@@box@com@nu{\begin{flushright}#1\end{flushright}}}'
+    r=r +r'\put@r@box@com@nu{#1}}'
     return r
   def formfrontenddef_checkmark(self,name,as_comment=False):
     if as_comment:
@@ -366,6 +392,7 @@ class applicationFormData:
       r=r +r'}'
     r=r +r'}'
     return r
+
   def tablerowdef(self,tabledata):
     r=''
     l=len(tabledata.table)
@@ -402,6 +429,7 @@ class applicationFormData:
     r=r + self.tablerowdef(tabledata)
     r=r +r"%"+'\n'+r"}"
     return r
+  
   def tablefrontenddef(self,tabledata):
     r=""
     r=r +r'\newenvironment{'
@@ -419,18 +447,6 @@ class applicationFormData:
     r=r +r'}{}'
     return r
 
-  def page_atfirst(self,n):
-    return r'\pageNo'+self.int2alphabet(n)+r'AtFirst'
-  def def_page_atfirst(self,n):
-    return r'\newcommand{'+self.page_atfirst(n)+r'}{}'
-  def pagename_frontend(self,n):
-    return "pageNo"+self.int2alphabet(n)
-  def pagename_none(self,n):
-    return self.pagename_frontend(n)+"*"
-  def pagename_pdf(self,n):
-    return self.pagename_frontend(n)+"**"
-  def pdffilename(self):
-    return self.projectdata.bgimagepath
 
   def pagedef_pdf(self,n):
     r=""
@@ -446,6 +462,9 @@ class applicationFormData:
     r=r + self.page_atfirst(n)
     r=r +r'}{\end{overwrappicture}}'
     return r
+  
+  def def_page_atfirst(self,n):
+    return r'\newcommand{'+self.page_atfirst(n)+r'}{}'
 
   def pagedef_woimage(self,n):
     r=""
@@ -490,8 +509,9 @@ class applicationFormData:
 % They are not good names to use.
 % Please define commands to use as frontend.
 %
-% Please redefine the command \pageNoDAtFirst,
-% if you want to do something whenever \begin{pageNoD} is called.
+% Please redefine the command '''+self.page_atfirst(0)+r'''
+% if you want to do something whenever '''+self.pagename_frontend(0)+r''' is called.
+%
 % Please redefine \baseuplength
 % if you want to move background image up.
 %
@@ -520,6 +540,8 @@ class applicationFormData:
 \else 
 \newcommand{\unitlength@nu}{'''+str(self.UNITLENGTH)+r'''pt}
 \fi
+
+\newcommand{\baseuplength}{-10}
 
 \newenvironment{overwrappicture}[2][]%
 {\newpage\noindent%
@@ -565,11 +587,17 @@ class applicationFormData:
 
 \newbox{\MyBlackBox@nu}
 \newenvironment{put@@box@env@nu}{\begin{lrbox}{\MyBlackBox@nu}\begin{minipage}[c]{\my@temp@var@w}\vspace{\@var@margin@top@nu}}{\end{minipage}\end{lrbox}\update@max@height@depth@nu{\MyBlackBox@nu}\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\usebox{\MyBlackBox@nu}}}
-\newcommand{\put@@box@com@nu}[1]{\begin{put@@box@env@nu}#1\end{put@@box@env@nu}}
-\newcommand{\put@@box@strike@nu}{\put@@box@com@nu{\rule[0.22\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\kern -\my@temp@var@w\rule[0.6\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\rule{0pt}{\my@temp@var@h}}}
-\newcommand{\put@@box@checkmark@nu}{\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\begin{minipage}[c]{\my@temp@var@w}\centering$\checkmark$\end{minipage}}}
 
 
+\newenvironment{put@l@box@env@nu}{\begin{put@@box@env@nu}}{\end{put@@box@env@nu}}
+\newenvironment{put@c@box@env@nu}{\begin{put@@box@env@nu}\begin{center}}{\end{center}\end{put@@box@env@nu}}
+\newenvironment{put@r@box@env@nu}{\begin{put@@box@env@nu}\begin{flushright}}{\end{flushright}\end{put@@box@env@nu}}
+\newcommand{\put@l@box@com@nu}[1]{\begin{put@l@box@env@nu}#1\end{put@l@box@env@nu}}
+\newcommand{\put@c@box@com@nu}[1]{\begin{put@c@box@env@nu}#1\end{put@c@box@env@nu}}
+\newcommand{\put@r@box@com@nu}[1]{\begin{put@r@box@env@nu}#1\end{put@r@box@env@nu}}
+
+\newcommand{\put@@box@strike@nu}{\begin{put@@box@env@nu}\rule[0.22\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\kern -\my@temp@var@w\rule[0.6\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\rule{0pt}{\my@temp@var@h}\end{put@@box@env@nu}}
+\newcommand{\put@@box@checkmark@nu}{\begin{put@@box@env@nu}\centering$\checkmark$\end{put@@box@env@nu}}
 
 \newlength{\@temp@var@margin@top@nu}
 \newcommand{\nextrow@groupedcell@nu}{%
@@ -589,9 +617,7 @@ class applicationFormData:
   \setlength{\@var@max@depth@nu}{0pt}
   \def\nextrow{\nextrow@groupedcell@nu}
 }{}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Some Parameters
-\newcommand{\baseuplength}{-10}
+
 \newcommand{\default@line@skip@nu}{0.5\baselineskip}
 \newenvironment{groupedcolumns}{\begin{groupedcell@nu}}{\end{groupedcell@nu}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -600,21 +626,24 @@ class applicationFormData:
   def get_style_code(self):
     r="%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     r=r+self.common_command()
-    r=r+"%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Definition of pages."
-
+    r=r+"\n\n% End of common commands\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n%%% Definition of forms.\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     page_atfirst=""
     page_def=""
+    page_front=""
     form_front=""
+    form_def=""
 
     for i in self.projectdata.get_pages_with_boxdata():
-      page_def=page_def+"\n"+self.pagedef_frontend(i)
+      page_front=page_front+"\n"+self.pagedef_frontend(i)
       page_def=page_def+"\n"+self.pagedef_woimage(i)
       page_def=page_def+"\n"+self.pagedef_pdf(i)
       page_atfirst=page_atfirst+"\n"+self.def_page_atfirst(i)
       form_front=form_front+"\n% page "+str(i+1)+" i.e.," +self.int2alphabet(i)
+      form_def=form_def+"\n% page "+str(i+1)+" i.e.," +self.int2alphabet(i)
       for boxdata in self.projectdata.x_boxdata_in_the_page(i):
-        form_front=form_front+"\n\n"+self.setvardef(boxdata)
-        form_front=form_front+"\n"+self.roundcircledef(boxdata)
+        form_def=form_def+"\n"+self.setvardef(boxdata)
+        #form_front=form_front+"\n\n"+self.setvardef(boxdata)
+        form_def=form_def+"\n"+self.roundcircledef(boxdata)+"\n\n"
         form_front=form_front+"\n\n"+self.formfrontenddef(boxdata)
         form_front=form_front+"\n"
         
@@ -623,16 +652,20 @@ class applicationFormData:
     for tabledata in self.projectdata.tables:
       table_backend=table_backend+"\n"+self.tablebackenddef(tabledata)
       table_front=table_front+"\n"+self.tablefrontenddef(tabledata)
+    r=r+"%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Backend commands for pages."
     r=r+page_def
-    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Backend commands for table forms."
     r=r+table_backend
-    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Definition of each box\n"
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Definition of position of each box.\n"
     r=r+"% Set vars for x, y, pos, width, height.\n"
-
+    r=r+form_def
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Forntend commands of boxes\n"
     r=r+form_front
-    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Forntend commands of pages\n"
+    r=r+page_front
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Hooked commands\n"
     r=r+page_atfirst
-    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Forntend commands of table forms\n"
     r=r+table_front
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     return r
@@ -1200,6 +1233,7 @@ class BoxDataListArea:
     vbox.show_all()
     for boxdata in self.parent.projectdata.boxes:
       self.append_boxdata(boxdata)
+      
   def get_vbox(self):
     return self.vbox
   
@@ -1212,12 +1246,15 @@ class BoxDataListArea:
   def append_boxdata(self,boxdata):
     data=(boxdata.id,boxdata.name,boxdata.sampletext,boxdata.page,boxdata.x_1,boxdata.x_2,boxdata.y_1,boxdata.y_2,BoxData.DESCRIPTION_VALIGN[boxdata.valign],BoxData.DESCRIPTION_HALIGN[boxdata.halign],BoxData.DESCRIPTION_TYPE[boxdata.type])
     self.treeview.get_model().append(data)
+    #self.treeview.scroll_to_cell(path)
+    
   def get_selected_id(self):
     (model,iteralist,idlist)=self.get_selected_ids()
     if iteralist:
       return (model,iteralist[0],idlist[0])
     else:
       return (model,None,None)
+    
   def get_selected_ids(self):
     (model, pathlist) = self.treeview.get_selection().get_selected_rows()
     if pathlist:
@@ -2084,10 +2121,15 @@ class ProjectData:
       prev_proj["pdfuri"]=uri
     self.set_document(prev_proj["pdfuri"])
     
+    
     if "stylename" in prev_proj:
       self.stylename=prev_proj["stylename"]
     else:
       self.stylename=base
+    if "localcommandsuffix" in prev_proj:
+      self.localcommandsuffix=prev_proj["localcommandsuffix"]
+    else:
+      self.localcommandsuffix=re.sub(r'[^a-zA-Z]','',self.stylename)
     if "samplebase" in prev_proj:
       self.samplebase=prev_proj["samplebase"]
     else:
@@ -2115,7 +2157,7 @@ class ProjectData:
       self.tables=[TableData.construct_from_dictionary(d) for d in prev_proj["tables"]]
     else:
       self.tables=[]
-    
+
 
   def set_document(self,uri):    
     self.boundingboxes=[]
@@ -2267,6 +2309,7 @@ class ProjectData:
     d["samplebase"]=self.samplebase
     d["makefilepath"]=self.makefilepath
     d["jsonpath"]=self.jsonpath
+    d["localcommandsuffix"]=self.localcommandsuffix
     d["boxes"]=[box.dump_as_dictionary() for box in self.boxes]
     d["grids"]=[grid.dump_as_dictionary() for grid in self.grids]
     d["tables"]=[table.dump_as_dictionary() for table in self.tables]
