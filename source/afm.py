@@ -2512,7 +2512,7 @@ class AFMMainArea:
     (model,iteralist,boxids)=self.listarea.get_selected_ids()
     if not boxids:
       return
-    for (itera,boxid,) in zip(iteralist,boxids):
+    for (itera,boxid) in zip(iteralist,boxids):
       if not boxid:
         return
       boxdata=self.projectdata.get_boxdata_by_id(boxid)
