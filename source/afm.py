@@ -1128,7 +1128,7 @@ class TableDataEntryArea:
     label=gtk.Label()
     label.set_markup("page")
     table.attach(label,1,2,7,8)
-    adjustment = gtk.Adjustment(value=current_page,lower=0,upper=projectdata.document.get_n_pages,step_incr=1)
+    adjustment = gtk.Adjustment(value=current_page,lower=0,upper=projectdata.document.get_n_pages(),step_incr=1)
     entry=gtk.SpinButton(adjustment)
     entry.set_value(current_page)
     self.entry_page=entry
