@@ -8,11 +8,11 @@ import pango
 import cairo
 try:
   import poppler
-  renderinglib_is_poppler=True
+  rendering_library_name='poppler'
 except:
   import fitz
   import io
-  renderinglib_is_poppler=False
+  rendering_library_name='mupdf'
 import sys
 import zipfile
 import os.path
@@ -28,6 +28,72 @@ def get_int_from_spinbutton(spinbutton):
   else:
     return spinbutton.get_value_as_int()
 
+#####################################################
+def get_pdfdocument_from_uri(uri):
+  if rendering_library_name=='poppler':
+    return pdfDocumentByPoppler(uri)
+  elif rendering_library_name=='mupdf':
+    return pdfDocumentByPymupdf(uri)
+  else:
+    return None
+  
+class pdfDocumentByPoppler:
+  def __init__(self,uri):
+    self.document = poppler.document_new_from_file(uri,None)
+    self.pages=[ None for i in range(self.get_n_pages())]
+      
+  def paint_page(self,page,ctx):
+    self.get_page(page).render(ctx)
+
+  def get_n_pages(self):
+    return self.document.get_n_pages()
+
+  def get_size_of_page(self,page):
+    return self.get_page(page).get_size()
+    
+  def get_page(self,page):
+    if self.pages[page]:
+      return self.pages[page]
+    else:
+      self.pages[page]=self.get_page_img(page)
+      return self.pages[page]
+
+  def get_page_img(self,page):
+    return self.document.get_page(page)
+
+
+class pdfDocumentByPymupdf:
+  def __init__(self,uri):
+    p=urlparse.urlparse(uri)
+    path=urllib.unquote(p.path)
+    self.document = fitz.open(path)
+    self.pages=[ None for i in range(self.get_n_pages())]
+    
+  def paint_page(self,page,ctx):
+    ctx.set_source_surface(self.get_page(page),0,0)
+    ctx.paint()
+
+  def get_n_pages(self):
+    return self.document.pageCount
+
+  def get_size_of_page(self,page):
+    p=self.get_page(page)
+    return (p.get_width(),p.get_height())
+    
+  def get_page(self,page):
+    if self.pages[page]:
+      return self.pages[page]
+    else:
+      self.pages[page]=self.get_page_img(page)
+      return self.pages[page]
+
+  def get_page_img(self,page):
+    p=self.document.loadPage(page)
+    pix = p.getPixmap()
+    #gtk.gdk.pixbuf_new_from_data(pix.samples,gtk.gdk.COLORSPACE_RGB,True,pix.n,pix.width,pix.height,pix.stride)
+    return cairo.ImageSurface.create_from_png(io.BytesIO(pix.getPNGData()))
+
+  
 #####################################################
 class applicationFormData:
   def int2alphabet(self,n):
@@ -931,7 +997,7 @@ class BoxDataEntryArea:
     label=gtk.Label()
     label.set_markup("page")
     table.attach(label,1,2,7,8)
-    adjustment = gtk.Adjustment(value=boxdata.page,lower=0,upper=projectdata.n_pages,step_incr=1)
+    adjustment = gtk.Adjustment(value=boxdata.page,lower=0,upper=projectdata.document.get_n_pages(),step_incr=1)
     entry=gtk.SpinButton(adjustment)
     entry.set_value(boxdata.page)
     self.entry_page=entry
@@ -1062,7 +1128,7 @@ class TableDataEntryArea:
     label=gtk.Label()
     label.set_markup("page")
     table.attach(label,1,2,7,8)
-    adjustment = gtk.Adjustment(value=current_page,lower=0,upper=projectdata.n_pages,step_incr=1)
+    adjustment = gtk.Adjustment(value=current_page,lower=0,upper=projectdata.document.get_n_pages,step_incr=1)
     entry=gtk.SpinButton(adjustment)
     entry.set_value(current_page)
     self.entry_page=entry
@@ -1276,23 +1342,17 @@ class LayoutOverBoxes(gtk.Layout):
     self.connect('expose-event', self.on_self_expose_event)
     self.projectdata=projectdata
     self.page=0
-    if self.projectdata:
-      self.back_ground_image = self.projectdata.get_page(self.page)
-    else:
-      self.back_ground_image = None
 
   def refresh_preview(self):
     if self.window:
       self.window.invalidate_rect(self.allocation,True) 
 
   def set_page(self,page):
-    if self.projectdata.n_pages>0:
-      self.page=page % self.projectdata.n_pages
+    n=self.projectdata.document.get_n_pages()
+    if n>0:
+      self.page=page % n
     else:
       self.page=page
-    if self.projectdata:
-      self.back_ground_image = self.projectdata.get_page(self.page)
-
     if self.window:
       self.window.invalidate_rect(self.allocation,True) 
 
@@ -1300,17 +1360,11 @@ class LayoutOverBoxes(gtk.Layout):
     self.width = allocation.width
     self.height = allocation.height
 
-  def paint_back_groung_image(self,ctx):
-    if self.back_ground_image:
-      if renderinglib_is_poppler:
-        self.back_ground_image.render(ctx)
-      else:
-        ctx.set_source_surface(self.back_ground_image,0,0)
-        ctx.paint()
-    
   def on_self_expose_event(self, widget, event):
     ctx = widget.bin_window.cairo_create()
-    self.paint_back_groung_image(ctx)  
+    if not self.projectdata:
+      return    
+    self.projectdata.document.paint_page(self.page,ctx)
     for box in self.projectdata.x_boxdata_in_the_page(self.page):
       (x1,x2,width,y1,y2,height)=self.projectdata.get_box_coordinate(box)
       
@@ -1961,7 +2015,7 @@ class LayoutOverBoxesWithHoganArea:
     hbox.add(label)
     label.set_markup("Current page: ")
     
-    adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.n_pages-1, step_incr=-1)
+    adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.document.get_n_pages()-1, step_incr=-1)
     entry=gtk.SpinButton(adj, 0, 0)
     entry.connect("changed", self.on_page_changed_event)
     hbox.add(entry)
@@ -2173,23 +2227,14 @@ class ProjectData:
   def set_document(self,uri):    
     self.boundingboxes=[]
     if uri:
-      if renderinglib_is_poppler:
-        self.document = poppler.document_new_from_file(uri,None)
-        self.n_pages = self.document.get_n_pages()
-      else:
-        p=urlparse.urlparse(uri)
-        path=urllib.unquote(p.path)
-        self.document = fitz.open(path)
-        self.n_pages = self.document.pageCount
+      self.document=get_pdfdocument_from_uri(uri)
     else:
       self.document=None
-      self.n_pages=10000
     if self.document:
-      self.pages=[ None for i in range(self.n_pages)]
       width = 0
-      height = 0    
-      for i in range(self.n_pages):
-        (w,h)=self.get_size_of_page(i)
+      height = 0
+      for i in range(self.document.get_n_pages()):
+        (w,h)=self.document.get_size_of_page(i)
         self.boundingboxes.append((0,0,w,h))
         if width<w:
           width=w
@@ -2275,25 +2320,6 @@ class ProjectData:
     height=y2-y1
     return (x1,x2,width,y1,y2,height)
 
-  def get_size_of_page(self,page):
-    page=self.get_page(page)
-    if renderinglib_is_poppler:
-      return page.get_size()
-    else:
-      return (page.get_width(),page.get_height())
-
-  def get_page(self,page):
-    if self.pages[page]:
-      return self.pages[page]
-    else:
-      if renderinglib_is_poppler:
-        self.pages[page]=self.document.get_page(page)
-      else:
-        p=self.document.loadPage(page)
-        pix = p.getPixmap()
-        #gtk.gdk.pixbuf_new_from_data(pix.samples,gtk.gdk.COLORSPACE_RGB,True,pix.n,pix.width,pix.height,pix.stride)
-        self.pages[page]=cairo.ImageSurface.create_from_png(io.BytesIO(pix.getPNGData()))
-      return self.pages[page]
 
   def output_to_zipfile(self,destzip,rootdir):
     print "writing imagefiles...."
@@ -2385,11 +2411,8 @@ class AFMMainArea:
     button.connect('clicked', self.on_click_save_as)
     hbbox.add(button)
     hbbox.show_all()
-
     self.box.show_all()
 
-
-    
   def open_preview_dialog(self):
     dialog=HoganDialog("Preview",None,
                        gtk.DIALOG_DESTROY_WITH_PARENT,
