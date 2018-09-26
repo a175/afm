@@ -828,10 +828,10 @@ class TableData:
   def __init__(self,table_of_id,id_as_int=None):
     if id_as_int==None:
       self.id_as_int=TableData.serialnum
-      BoxData.serialnum=TableData.serialnum+1
+      TableData.serialnum=TableData.serialnum+1
     else:
       self.id_as_int=id_as_int
-      BoxData.serialnum=max(TableData.serialnum,id_as_int)+1
+      TableData.serialnum=max(TableData.serialnum,id_as_int)+1
     self.id=self.int2alphabet(self.id_as_int)
     self.table=[[rij for rij in ri] for ri in table_of_id]
     
@@ -892,6 +892,7 @@ class BoxData:
     self.valign=1
     self.halign=1
     self.type=0
+
 
   def dump_as_dictionary(self):
     d={}
