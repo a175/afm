@@ -668,6 +668,7 @@ class applicationFormData:
 
 \newcommand{\put@@box@strike@nu}{\begin{put@@box@env@nu}\rule[0.22\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\kern -\my@temp@var@w\rule[0.6\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\rule{0pt}{\my@temp@var@h}\end{put@@box@env@nu}}
 \newcommand{\put@@box@checkmark@nu}{\begin{put@@box@env@nu}\centering$\checkmark$\end{put@@box@env@nu}}
+\newcommand{\put@@box@rule@nu}{\put@l@box@com@nu{\rule{\my@temp@var@w}{\my@temp@var@h}}}
 
 \newlength{\@temp@var@margin@top@nu}
 \newcommand{\nextrow@groupedcell@nu}{%
