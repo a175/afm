@@ -22,6 +22,9 @@ import urlparse
 import json
 import re
 
+def print_log():
+  print("#Log:", comment)
+
 def get_int_from_spinbutton(spinbutton):
   if spinbutton.get_text():
     return int(spinbutton.get_text())
@@ -2324,35 +2327,35 @@ class ProjectData:
 
 
   def output_to_zipfile(self,destzip,rootdir):
-    print "writing imagefiles...."
+    print_log("writing imagefiles....")
     afd=applicationFormData(self)
     afd.create_bgimage_file(self.bgimagefullpath,destzip,rootdir)
 
-    print "writing the style file...."
+    print_log("writing the style file....")
     stypath=os.path.join(rootdir,self.stylename+".sty")
     inf=zipfile.ZipInfo(stypath)
     destzip.writestr(inf,afd.get_style_code())
 
-    print "writing a sample file...."
+    print_log("writing a sample file....")
     samplepath=os.path.join(rootdir,self.samplepath)
     inf=zipfile.ZipInfo(samplepath)
     destzip.writestr(inf,afd.get_sample_code(self.stylename))
 
-    print "writing Makefile...."
+    print_log("writing Makefile....")
     makefilepath=os.path.join(rootdir,self.makefilepath)
     inf=zipfile.ZipInfo(makefilepath)
     destzip.writestr(inf,afd.get_sample_makefile(self.samplebase,self.stylename))
 
-    print "writing this project data...."
+    print_log("writing this project data....")
     jsonfilepath=os.path.join(rootdir,self.jsonpath)
     inf=zipfile.ZipInfo(jsonfilepath)
     destzip.writestr(inf,self.dump_as_json())
     
     for inf in destzip.infolist():
-      inf.external_attr = 0755 << 16L
+      inf.external_attr = 0o755 << 16
       inf.create_system = 0
     destzip.close()
-    print "done."
+    print_log("done.")
 
   def get_default_dialog_size(self):
     return self.dialogsize
@@ -2467,7 +2470,7 @@ class AFMMainArea:
       return
     destzipfilename=dialog.get_filename()
     dialog.destroy()
-    print 'creating ', destzipfilename
+    print_log('creating '+destzipfilename+'.')
     rootdir=os.path.splitext(os.path.basename(destzipfilename))[0]
     destzip=zipfile.ZipFile(destzipfilename,'w')
     self.projectdata.output_to_zipfile(destzip,rootdir)
