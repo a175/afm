@@ -1,24 +1,31 @@
 #!/usr/bin/env python
 
-import pygtk
-pygtk.require('2.0')
-import gtk
+#import pygtk
+#pygtk.require('2.0')
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk 
+from gi.repository import Pango
+
 import string, time
-import pango
+#import pango
+#import gtk
+
 import cairo
-try:
-  import poppler
-  rendering_library_name='poppler'
-except:
-  import fitz
-  import io
-  rendering_library_name='mupdf'
+#try:
+#  import poppler
+#  rendering_library_name='poppler'
+#except:
+#import fitz
+#import io
+#rendering_library_name='mupdf'
+
 import sys
 import zipfile
 import os.path
 import os
 import urllib
-import urlparse
 import json
 import re
 
@@ -67,7 +74,7 @@ class pdfDocumentByPoppler:
 
 class pdfDocumentByPymupdf:
   def __init__(self,uri):
-    p=urlparse.urlparse(uri)
+    p=urllib.parse.urlparse(uri)
     path=urllib.unquote(p.path)
     self.document = fitz.open(path)
     self.pages=[ None for i in range(self.get_n_pages())]
@@ -930,46 +937,46 @@ class BoxDataEntryArea:
   def __init__(self,boxdata,message,projectdata):
     self.projectdata=projectdata
     self.boxdata=boxdata
-    vbox=gtk.VBox()
+    vbox=Gtk.VBox()
     self.vbox=vbox
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup(message)
     vbox.pack_start(label,False,False,10)
-    table=gtk.Table(2,12)
+    table=Gtk.Table(2,12)
     vbox.add(table)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("Id")
     table.attach(label,1,2,1,2)
-    entry=gtk.Entry()
+    entry=Gtk.Entry()
     table.attach(entry,2,3,1,2)
     entry.set_text(str(boxdata.id))
     entry.set_editable(False)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("Name")
     table.attach(label,1,2,2,3)
-    entry=gtk.Entry()
+    entry=Gtk.Entry()
     self.entry_name=entry
     entry.set_text(str(boxdata.name))
     table.attach(entry,2,3,2,3)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("sample text")
     table.attach(label,1,2,3,4)
-    entry=gtk.TextView()
+    entry=Gtk.TextView()
     self.entry_sampletext=entry
     entry.get_buffer().set_text(str(boxdata.sampletext))
     self.entry_sampletext=entry
-    sw = gtk.ScrolledWindow()
-    sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    sw = Gtk.ScrolledWindow()
+    sw.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_AUTOMATIC)
     sw.add(entry) 
     table.attach(sw,2,3,3,4)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("virtical align")
     table.attach(label,1,2,4,5)
-    combobox = gtk.combo_box_new_text()
+    combobox = Gtk.combo_box_new_text()
     for i,(text,v) in enumerate(self.COMBO_VALIGN):
       combobox.append_text(text)
       if boxdata.valign==v:
@@ -977,10 +984,10 @@ class BoxDataEntryArea:
     self.entry_valign=combobox
     table.attach(combobox,2,3,4,5)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("horizontal align")
     table.attach(label,1,2,5,6)
-    combobox = gtk.combo_box_new_text()
+    combobox = Gtk.combo_box_new_text()
     for i,(text,v) in enumerate(self.COMBO_HALIGN):
       combobox.append_text(text)
       if boxdata.halign==v:
@@ -988,10 +995,10 @@ class BoxDataEntryArea:
     self.entry_halign=combobox
     table.attach(combobox,2,3,5,6)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("type")
     table.attach(label,1,2,6,7)
-    combobox = gtk.combo_box_new_text()
+    combobox = Gtk.combo_box_new_text()
     for i,(text,v) in enumerate(self.COMBO_TYPE):
       combobox.append_text(text)
       if boxdata.type==v:
@@ -999,48 +1006,48 @@ class BoxDataEntryArea:
     self.entry_type=combobox
     table.attach(combobox,2,3,6,7)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("page")
     table.attach(label,1,2,7,8)
-    adjustment = gtk.Adjustment(value=boxdata.page,lower=0,upper=projectdata.document.get_n_pages(),step_incr=1)
-    entry=gtk.SpinButton(adjustment)
+    adjustment = Gtk.Adjustment(value=boxdata.page,lower=0,upper=projectdata.document.get_n_pages(),step_incr=1)
+    entry=Gtk.SpinButton(adjustment)
     entry.set_value(boxdata.page)
     self.entry_page=entry
     table.attach(entry,2,3,7,8)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("top")
     table.attach(label,1,2,8,9)
-    adjustment = gtk.Adjustment(value=boxdata.y_1,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
-    entry=gtk.SpinButton(adjustment)
+    adjustment = Gtk.Adjustment(value=boxdata.y_1,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
+    entry=Gtk.SpinButton(adjustment)
     entry.set_value(boxdata.y_1)
     self.entry_y1=entry
     table.attach(entry,2,3,8,9)
     
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("bottom")
     table.attach(label,1,2,9,10)
-    adjustment = gtk.Adjustment(value=boxdata.y_2,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
-    entry=gtk.SpinButton(adjustment)
+    adjustment = Gtk.Adjustment(value=boxdata.y_2,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
+    entry=Gtk.SpinButton(adjustment)
     entry.set_value(boxdata.y_2)
     self.entry_y2=entry
     table.attach(entry,2,3,9,10)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("left")
     table.attach(label,1,2,10,11)
-    adjustment = gtk.Adjustment(value=boxdata.x_1,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
+    adjustment = Gtk.Adjustment(value=boxdata.x_1,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
 
-    entry=gtk.SpinButton(adjustment)
+    entry=Gtk.SpinButton(adjustment)
     entry.set_value(boxdata.x_1)
     self.entry_x1=entry
     table.attach(entry,2,3,10,11)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("right")
     table.attach(label,1,2,11,12)
-    adjustment = gtk.Adjustment(value=boxdata.x_2,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
-    entry=gtk.SpinButton(adjustment)
+    adjustment = Gtk.Adjustment(value=boxdata.x_2,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
+    entry=Gtk.SpinButton(adjustment)
     entry.set_value(boxdata.x_2)
     self.entry_x2=entry
     table.attach(entry,2,3,11,12)
@@ -1086,18 +1093,18 @@ class TableDataEntryArea:
 
   def __init__(self,message,projectdata,current_page):
     self.projectdata=projectdata
-    vbox=gtk.VBox()
+    vbox=Gtk.VBox()
     self.vbox=vbox
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup(message)
     vbox.pack_start(label,False,False,10)
-    table=gtk.Table(2,10)
+    table=Gtk.Table(2,10)
     vbox.add(table)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("virtical align")
     table.attach(label,1,2,4,5)
-    combobox = gtk.combo_box_new_text()
+    combobox = Gtk.combo_box_new_text()
     for i,(text,v) in enumerate(self.COMBO_VALIGN):
       combobox.append_text(text)
       #if boxdata.valign==v:
@@ -1106,10 +1113,10 @@ class TableDataEntryArea:
     self.entry_valign=combobox
     table.attach(combobox,2,3,4,5)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("horizontal align")
     table.attach(label,1,2,5,6)
-    combobox = gtk.combo_box_new_text()
+    combobox = Gtk.combo_box_new_text()
     for i,(text,v) in enumerate(self.COMBO_HALIGN):
       combobox.append_text(text)
       #if boxdata.halign==v:
@@ -1118,10 +1125,10 @@ class TableDataEntryArea:
     self.entry_halign=combobox
     table.attach(combobox,2,3,5,6)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("type")
     table.attach(label,1,2,6,7)
-    combobox = gtk.combo_box_new_text()
+    combobox = Gtk.combo_box_new_text()
     for i,(text,v) in enumerate(self.COMBO_TYPE):
       combobox.append_text(text)
       #if boxdata.type==v:
@@ -1130,27 +1137,27 @@ class TableDataEntryArea:
     self.entry_type=combobox
     table.attach(combobox,2,3,6,7)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("page")
     table.attach(label,1,2,7,8)
-    adjustment = gtk.Adjustment(value=current_page,lower=0,upper=projectdata.document.get_n_pages(),step_incr=1)
-    entry=gtk.SpinButton(adjustment)
+    adjustment = Gtk.Adjustment(value=current_page,lower=0,upper=projectdata.document.get_n_pages(),step_incr=1)
+    entry=Gtk.SpinButton(adjustment)
     entry.set_value(current_page)
     self.entry_page=entry
     table.attach(entry,2,3,7,8)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("t,b;t,b;...;t,b")
     table.attach(label,1,2,8,9)
-    entry=gtk.Entry()
+    entry=Gtk.Entry()
     self.entry_yy=entry
     entry.set_text("")
     table.attach(entry,2,3,8,9)
 
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup("l,r;l,r;...;l,r")
     table.attach(label,1,2,9,10)
-    entry=gtk.Entry()
+    entry=Gtk.Entry()
     entry.set_text("")
     self.entry_xx=entry
     table.attach(entry,2,3,9,10)
@@ -1194,114 +1201,114 @@ class BoxDataListArea:
   def __init__(self,parent):
     self.parent=parent
 
-    vbox=gtk.VBox()
+    vbox=Gtk.VBox()
     self.vbox=vbox
 
-    store = gtk.ListStore (str,str,str, int, int,int,int,int, str,str,str)
-    treeview=gtk.TreeView(store)
+    store = Gtk.ListStore (str,str,str, int, int,int,int,int, str,str,str)
+    treeview=Gtk.TreeView(store)
     self.treeview=treeview
     
     treeview.set_rules_hint(True)
-    treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+    treeview.get_selection().set_mode(Gtk.SELECTION_MULTIPLE)
     
     
-    tvcolumn = gtk.TreeViewColumn('page')
+    tvcolumn = Gtk.TreeViewColumn('page')
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 3)
     treeview.set_reorderable(True)
 
-    tvcolumn = gtk.TreeViewColumn('id')
+    tvcolumn = Gtk.TreeViewColumn('id')
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 0)
     
-    tvcolumn = gtk.TreeViewColumn('Neme')
+    tvcolumn = Gtk.TreeViewColumn('Neme')
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 1)
     
-    tvcolumn = gtk.TreeViewColumn('y')
+    tvcolumn = Gtk.TreeViewColumn('y')
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 6)
     treeview.set_reorderable(True)
 
 
-    tvcolumn = gtk.TreeViewColumn("y'")
+    tvcolumn = Gtk.TreeViewColumn("y'")
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 7)
     treeview.set_reorderable(True)
     
-    tvcolumn = gtk.TreeViewColumn('x')
+    tvcolumn = Gtk.TreeViewColumn('x')
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 4)
     treeview.set_reorderable(True)
 
-    tvcolumn = gtk.TreeViewColumn("x'")
+    tvcolumn = Gtk.TreeViewColumn("x'")
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 5)
     treeview.set_reorderable(True)
 
 
-    tvcolumn = gtk.TreeViewColumn('valign')
+    tvcolumn = Gtk.TreeViewColumn('valign')
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 8)
     treeview.set_reorderable(True)
 
-    tvcolumn = gtk.TreeViewColumn('halign')
+    tvcolumn = Gtk.TreeViewColumn('halign')
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 9)
     treeview.set_reorderable(True)
 
-    tvcolumn = gtk.TreeViewColumn('type')
+    tvcolumn = Gtk.TreeViewColumn('type')
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 10)
     treeview.set_reorderable(True)
 
 
 
-    tvcolumn = gtk.TreeViewColumn('Sample Text')
+    tvcolumn = Gtk.TreeViewColumn('Sample Text')
     treeview.append_column(tvcolumn)
-    cell = gtk.CellRendererText()
+    cell = Gtk.CellRendererText()
     tvcolumn.pack_start(cell, True)
     tvcolumn.add_attribute(cell, 'text', 2)
     treeview.set_reorderable(True)
     
-    sw = gtk.ScrolledWindow()
-    sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    sw = Gtk.ScrolledWindow()
+    sw.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_AUTOMATIC)
     sw.add(treeview) 
     vbox.add(sw)
 
 
-    hbox = gtk.HButtonBox() 
+    hbox = Gtk.HButtonBox() 
     vbox.pack_start(hbox,expand=False, fill=False)
-    hbox.set_layout(gtk.BUTTONBOX_END)
+    hbox.set_layout(Gtk.BUTTONBOX_END)
     self.buttonbox=hbox
     
-    button = gtk.Button(stock=gtk.STOCK_NEW)
+    button = Gtk.Button(stock=Gtk.STOCK_NEW)
     hbox.add(button)
     self.button_new=button
-    button = gtk.Button(stock=gtk.STOCK_REMOVE)
+    button = Gtk.Button(stock=Gtk.STOCK_REMOVE)
     hbox.add(button)
     self.button_remove=button
-    button = gtk.Button(stock=gtk.STOCK_EDIT)
+    button = Gtk.Button(stock=Gtk.STOCK_EDIT)
     hbox.add(button)
     self.button_edit=button
 
@@ -1338,9 +1345,9 @@ class BoxDataListArea:
     else:
       return (model,None,None)
 
-class LayoutOverBoxes(gtk.Layout):
+class LayoutOverBoxes(Gtk.Layout):
   def __init__(self,projectdata):
-    gtk.Layout.__init__(self)
+    Gtk.Layout.__init__(self)
     self.message='test text'
     self.width = self.height = 0
     self.connect('size-allocate', self.on_self_size_allocate)
@@ -1565,9 +1572,9 @@ class LayoutOverBoxes(gtk.Layout):
 
 
 
-class Bar(gtk.DrawingArea):
+class Bar(Gtk.DrawingArea):
   def __init__(self,direction,margin):
-    gtk.DrawingArea.__init__(self)
+    Gtk.DrawingArea.__init__(self)
     self.width = self.height = 0
     self.direction=direction
     self.connect('size-allocate', self.on_self_size_allocate)
@@ -1667,10 +1674,10 @@ class Bar(gtk.DrawingArea):
         ctx.close_path()                       
         ctx.fill() 
 
-class SpinButtonForBarOnLayout(gtk.SpinButton):
+class SpinButtonForBarOnLayout(Gtk.SpinButton):
   def __init__(self,adj_max,a,b,id_adj,id_spb):
-    adj=gtk.Adjustment(value=0,lower=0,upper=adj_max, step_incr=-1)
-    gtk.SpinButton.__init__(self,adj,a,b)
+    adj=Gtk.Adjustment(value=0,lower=0,upper=adj_max, step_incr=-1)
+    Gtk.SpinButton.__init__(self,adj,a,b)
     self.set_width_chars(5)
     self.set_alignment(1.0)
     self.bars=[]
@@ -1723,12 +1730,12 @@ class SpinButtonForBarOnLayout(gtk.SpinButton):
     if self.current_bar != None:
       self.current_bar.set_value(get_int_from_spinbutton(self))
 
-class BarOnLayout(gtk.EventBox):
+class BarOnLayout(Gtk.EventBox):
   MASK_VIRTICAL_BAR=2
   MASK_OPPOSIT_DIRECTION=1
   LINEWIDTH=1
   def __init__(self,direction,max_x,max_y,spinbuttonforbar,griddata,current_page):
-    gtk.EventBox.__init__(self)
+    Gtk.EventBox.__init__(self)
     self.x=0
     self.y=0
     self.direction=direction
@@ -1741,16 +1748,16 @@ class BarOnLayout(gtk.EventBox):
       self.height=max_y
       self.width=self.LINEWIDTH
       self.margin=(13+9*griddata.id)%self.height
-      box=gtk.HBox()
-      label_box=gtk.VBox()
-      label_box.pack_start(gtk.HSeparator(),False,False,0)
+      box=Gtk.HBox()
+      label_box=Gtk.VBox()
+      label_box.pack_start(Gtk.HSeparator(),False,False,0)
     else:
       self.width=max_x
       self.height=self.LINEWIDTH
       self.margin=(13+4*griddata.id)%self.width
-      box=gtk.VBox()
-      label_box=gtk.HBox()
-      label_box.pack_start(gtk.VSeparator(),False,False,0)
+      box=Gtk.VBox()
+      label_box=Gtk.HBox()
+      label_box.pack_start(Gtk.VSeparator(),False,False,0)
 
     drawingarea = Bar(direction,self.margin)
     self.drawingarea=drawingarea
@@ -1760,7 +1767,7 @@ class BarOnLayout(gtk.EventBox):
 
     self.add(box)
     box.add(drawingarea)
-    label=gtk.Label()
+    label=Gtk.Label()
     label.set_markup('<span foreground="#0055FF" size="small">'+str(self.griddata.id)+'</span>')
     label_box.pack_start(label,False, False, 0)
     box.add(label_box)
@@ -1926,7 +1933,7 @@ class BarOnLayout(gtk.EventBox):
     if not self.draging:
       return True
     x, y, state = self.parent.window.get_pointer()
-    if state & gtk.gdk.BUTTON1_MASK:
+    if state & Gtk.gdk.BUTTON1_MASK:
       if self.direction & self.MASK_VIRTICAL_BAR:
         self.move_horizontal(x-self.margin_x)
       else:
@@ -1939,27 +1946,27 @@ class BarOnLayout(gtk.EventBox):
 
 ##################
 
-class BoxDataDialog(gtk.Dialog):
+class BoxDataDialog(Gtk.Dialog):
   def __init__(self,title=None, parent=None, flags=0, buttons=None,boxdata=None,message="",projectdata=None):
-    gtk.Dialog.__init__(self,title,parent,flags,buttons)
+    Gtk.Dialog.__init__(self,title,parent,flags,buttons)
     self.area=BoxDataEntryArea(boxdata,message,projectdata)
     self.vbox.pack_start(self.area.get_box())
 
   def get_boxdata(self):
     return self.area.update_and_get_boxdata()
 
-class TableDataDialog(gtk.Dialog):
+class TableDataDialog(Gtk.Dialog):
   def __init__(self,title=None, parent=None, flags=0, buttons=None,message="",projectdata=None,current_page=0):
-    gtk.Dialog.__init__(self,title,parent,flags,buttons)
+    Gtk.Dialog.__init__(self,title,parent,flags,buttons)
     self.area=TableDataEntryArea(message,projectdata,current_page)
     self.vbox.pack_start(self.area.get_box())
 
   def get_tabledata(self):
     return self.area.get_tabledata()
 
-class HoganDialog(gtk.Dialog):
+class HoganDialog(Gtk.Dialog):
   def __init__(self,title=None, parent=None, flags=0, buttons=None, projectdata=None,p=0):
-    gtk.Dialog.__init__(self,title,parent,flags,buttons)
+    Gtk.Dialog.__init__(self,title,parent,flags,buttons)
     self.area=LayoutOverBoxesWithHoganArea(projectdata,p)
     self.vbox.pack_start(self.area.get_box())
     (w,h)=projectdata.get_default_dialog_size()
@@ -1980,9 +1987,9 @@ class LayoutOverBoxesWithHoganArea:
   def __init__(self,projectdata,p):
     self.projectdata=projectdata
     
-    box = gtk.VBox(False,0)
+    box = Gtk.VBox(False,0)
     box.show()
-    table = gtk.Table(2, 2, False)
+    table = Gtk.Table(2, 2, False)
     table.show()
     box.pack_start(table, True, True, 0)
     layout = LayoutOverBoxes(self.projectdata)
@@ -1993,53 +2000,53 @@ class LayoutOverBoxesWithHoganArea:
     layout.set_size(self.projectdata.lwidth, self.projectdata.lheight)
     layout.connect("size-allocate", self.layout_resize)
     layout.show()
-    table.attach(layout, 0, 1, 0, 1, gtk.FILL|gtk.EXPAND,
-                 gtk.FILL|gtk.EXPAND, 0, 0)
-    vScrollbar = gtk.VScrollbar(None)
+    table.attach(layout, 0, 1, 0, 1, Gtk.FILL|Gtk.EXPAND,
+                 Gtk.FILL|Gtk.EXPAND, 0, 0)
+    vScrollbar = Gtk.VScrollbar(None)
     vScrollbar.show()
-    table.attach(vScrollbar, 1, 2, 0, 1, gtk.FILL|gtk.SHRINK,
-                 gtk.FILL|gtk.SHRINK, 0, 0)
-    hScrollbar = gtk.HScrollbar(None)
+    table.attach(vScrollbar, 1, 2, 0, 1, Gtk.FILL|Gtk.SHRINK,
+                 Gtk.FILL|Gtk.SHRINK, 0, 0)
+    hScrollbar = Gtk.HScrollbar(None)
     hScrollbar.show()
-    table.attach(hScrollbar, 0, 1, 1, 2, gtk.FILL|gtk.SHRINK,
-                 gtk.FILL|gtk.SHRINK,
+    table.attach(hScrollbar, 0, 1, 1, 2, Gtk.FILL|Gtk.SHRINK,
+                 Gtk.FILL|Gtk.SHRINK,
                  0, 0)	
     vAdjust = layout.get_vadjustment()
     vScrollbar.set_adjustment(vAdjust)
     hAdjust = layout.get_hadjustment()
     hScrollbar.set_adjustment(hAdjust)
     
-    coordinate_hbox=gtk.HBox(spacing=20)
+    coordinate_hbox=Gtk.HBox(spacing=20)
     self.coordinate_hbox=coordinate_hbox
 
-    self.coordinate_hbox.add(gtk.VSeparator())
+    self.coordinate_hbox.add(Gtk.VSeparator())
 
-    hbox=gtk.HBox()
+    hbox=Gtk.HBox()
     coordinate_hbox.add(hbox)
-    label=gtk.Label()
+    label=Gtk.Label()
     hbox.add(label)
     label.set_markup("Current page: ")
     
-    adj = gtk.Adjustment(value=p, lower=0,upper=self.projectdata.document.get_n_pages()-1, step_incr=-1)
-    entry=gtk.SpinButton(adj, 0, 0)
+    adj = Gtk.Adjustment(value=p, lower=0,upper=self.projectdata.document.get_n_pages()-1, step_incr=-1)
+    entry=Gtk.SpinButton(adj, 0, 0)
     entry.connect("changed", self.on_page_changed_event)
     hbox.add(entry)
 
     
-    self.coordinate_hbox.add(gtk.VSeparator())
+    self.coordinate_hbox.add(Gtk.VSeparator())
 
-    hbox=gtk.HBox()
+    hbox=Gtk.HBox()
     self.coordinate_hbox.add(hbox)
-    label=gtk.Label()
+    label=Gtk.Label()
     hbox.add(label)
     label.set_markup("Forcused grid: ")
-    adj = gtk.Adjustment(value=p, lower=0,upper=-1, step_incr=-1)
-    entry=gtk.SpinButton(adj, 0, 0)
+    adj = Gtk.Adjustment(value=p, lower=0,upper=-1, step_incr=-1)
+    entry=Gtk.SpinButton(adj, 0, 0)
     hbox.add(entry)
 
-    hbox=gtk.HBox()
+    hbox=Gtk.HBox()
     self.coordinate_hbox.add(hbox)
-    label=gtk.Label()
+    label=Gtk.Label()
     hbox.add(label)
     label.set_markup("Value: ")
     w=self.projectdata.lwidth
@@ -2050,13 +2057,13 @@ class LayoutOverBoxesWithHoganArea:
     entry.connect("changed", self.spb.set_current_bar_on_changed)
 
     
-    self.coordinate_hbox.add(gtk.VSeparator())
+    self.coordinate_hbox.add(Gtk.VSeparator())
   
-    hbox = gtk.HButtonBox()
+    hbox = Gtk.HButtonBox()
     coordinate_hbox.add(hbox)
-    hbox.set_layout(gtk.BUTTONBOX_CENTER)
+    hbox.set_layout(Gtk.BUTTONBOX_CENTER)
     
-    combobox = gtk.combo_box_new_text()
+    combobox = Gtk.combo_box_new_text()
     hbox.add(combobox)
     combobox.append_text("---")
     combobox.append_text(" | ")
@@ -2064,20 +2071,20 @@ class LayoutOverBoxesWithHoganArea:
     self.new_ruler_will_be_horizontal=True
     combobox.set_active(0)
     
-    button = gtk.Button(stock=gtk.STOCK_ADD)
+    button = Gtk.Button(stock=Gtk.STOCK_ADD)
     hbox.add(button)
     self.button_edit=button
     button.connect('clicked', self.add_new_ruler_onclick)
 
 
-    self.coordinate_hbox.add(gtk.VSeparator())
+    self.coordinate_hbox.add(Gtk.VSeparator())
 
-    checkbutton= gtk.CheckButton("hide all")
+    checkbutton= Gtk.CheckButton("hide all")
     checkbutton.show()
     checkbutton.connect("toggled", self.on_toggle_hide_grid)
     self.coordinate_hbox.add(checkbutton)
 
-    self.coordinate_hbox.add(gtk.VSeparator())
+    self.coordinate_hbox.add(Gtk.VSeparator())
 
 
     self.rulers=[]
@@ -2085,7 +2092,7 @@ class LayoutOverBoxesWithHoganArea:
     coordinate_hbox.show_all()
     box.pack_start(coordinate_hbox, False, False, 0)
 
-    hbox=gtk.HBox()
+    hbox=Gtk.HBox()
     hbox.add(box)
     hbox.show_all()
     self.box=hbox
@@ -2172,7 +2179,7 @@ class ProjectData:
   DEFAULT_MAKEFILE_PATH="Makefile"
 
   def __init__(self,uri):
-    p=urlparse.urlparse(uri)
+    p=urllib.parse.urlparse(uri)
     path=urllib.unquote(p.path)
     (self.destdir,filename)=os.path.split(path)
     (base,ext)=os.path.splitext(filename)
@@ -2384,7 +2391,7 @@ class AFMMainArea:
   def __init__(self,projectdata):
     self.projectdata=projectdata
     self.preview=None    
-    self.box=gtk.VBox()
+    self.box=Gtk.VBox()
     listarea=BoxDataListArea(self)
     self.box.pack_start(listarea.get_vbox())
     self.listarea=listarea
@@ -2393,26 +2400,26 @@ class AFMMainArea:
     button_remove.connect('clicked', self.on_click_remove)
     button_edit.connect('clicked', self.on_click_edit)
 
-    hbbox = gtk.HButtonBox()
+    hbbox = Gtk.HButtonBox()
     listarea.get_buttonbox().pack_start(hbbox,expand=False, fill=False)
 
-    hbbox.set_layout(gtk.BUTTONBOX_END)
-    button = gtk.Button("Add a table")
+    hbbox.set_layout(Gtk.BUTTONBOX_END)
+    button = Gtk.Button("Add a table")
     button.connect('clicked', self.on_click_addtable)
     hbbox.add(button)
 
 
-    hbbox = gtk.HButtonBox() 
+    hbbox = Gtk.HButtonBox() 
     listarea.get_vbox().pack_start(hbbox,expand=False, fill=False)
-    hbbox.set_layout(gtk.BUTTONBOX_END)
+    hbbox.set_layout(Gtk.BUTTONBOX_END)
 
-    hbbox.set_layout(gtk.BUTTONBOX_END)
-    button = gtk.Button("Show Grids/Preview")
+    hbbox.set_layout(Gtk.BUTTONBOX_END)
+    button = Gtk.Button("Show Grids/Preview")
     button.connect('clicked', self.on_click_preview)
     hbbox.add(button)
     self.open_preview_button=button
     
-    button = gtk.Button(stock=gtk.STOCK_SAVE_AS)
+    button = Gtk.Button(stock=Gtk.STOCK_SAVE_AS)
     button.connect('clicked', self.on_click_save_as)
     hbbox.add(button)
     hbbox.show_all()
@@ -2420,7 +2427,7 @@ class AFMMainArea:
 
   def open_preview_dialog(self):
     dialog=HoganDialog("Preview",None,
-                       gtk.DIALOG_DESTROY_WITH_PARENT,
+                       Gtk.DIALOG_DESTROY_WITH_PARENT,
                        None,
                        self.projectdata,0)
     dialog.connect("delete_event", self.on_delete_preview_dialog)
@@ -2443,15 +2450,18 @@ class AFMMainArea:
 
   
   def on_click_save_as(self,widget):
-    dialog = gtk.FileChooserDialog('Select zip file to save.',None,
-                                   action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                        buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                         gtk.STOCK_SAVE, gtk.RESPONSE_ACCEPT))
+    dialog = Gtk.FileChooserDialog('Select zip file to save.',None,
+                                   action=Gtk.FILE_CHOOSER_ACTION_SAVE,
+                                   buttons=(Gtk.STOCK_CANCEL,
+                                            Gtk.RESPONSE_REJECT,
+                                            Gtk.STOCK_SAVE,
+                                            Gtk.RESPONSE_ACCEPT)
+                                   )
     dialog.set_current_folder(self.projectdata.destdir)
     dialog.set_current_name(self.projectdata.stylename+'-stylefile.zip')
 
     dialog.set_do_overwrite_confirmation(True)
-    filter = gtk.FileFilter()
+    filter = Gtk.FileFilter()
     filter.set_name("ZIP files")
     filter.add_mime_type("application/x-compress")
     filter.add_mime_type("application/x-zip-compressed")
@@ -2459,13 +2469,13 @@ class AFMMainArea:
     filter.add_mime_type("application/x-zip")
     filter.add_pattern("*.zip")
     dialog.add_filter(filter)
-    filter = gtk.FileFilter()
+    filter = Gtk.FileFilter()
     filter.set_name("All files")
     filter.add_pattern("*")
     dialog.add_filter(filter)
 
     r = dialog.run()
-    if r!=gtk.RESPONSE_ACCEPT:
+    if r!=Gtk.RESPONSE_ACCEPT:
       dialog.destroy()
       return
     destzipfilename=dialog.get_filename()
@@ -2474,7 +2484,7 @@ class AFMMainArea:
     rootdir=os.path.splitext(os.path.basename(destzipfilename))[0]
     destzip=zipfile.ZipFile(destzipfilename,'w')
     self.projectdata.output_to_zipfile(destzip,rootdir)
-    #gtk.main_quit()
+    #Gtk.main_quit()
 
   def refresh_preview(self):
       if self.preview:
@@ -2586,12 +2596,12 @@ class AFMMainArea:
         self.listarea.append_boxdata(boxdata)
 
   def get_tabledata_by_dialog(self,title,message,current_page):
-    mode=gtk.DIALOG_DESTROY_WITH_PARENT|gtk.DIALOG_MODAL
-    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-             gtk.STOCK_OK, gtk.RESPONSE_ACCEPT)                           
+    mode=Gtk.DIALOG_DESTROY_WITH_PARENT|Gtk.DIALOG_MODAL
+    buttons=(Gtk.STOCK_CANCEL, Gtk.RESPONSE_REJECT,
+             Gtk.STOCK_OK, Gtk.RESPONSE_ACCEPT)                           
     dialog=TableDataDialog(title,None,mode,buttons,message,self.projectdata,current_page)
     r = dialog.run()
-    if r==gtk.RESPONSE_ACCEPT:
+    if r==Gtk.RESPONSE_ACCEPT:
       tabledata=dialog.get_tabledata()
     else:
       tabledata=None
@@ -2599,13 +2609,13 @@ class AFMMainArea:
     return tabledata
 
   def get_boxdata_by_dialog(self,boxdata,title,message):
-    mode=gtk.DIALOG_DESTROY_WITH_PARENT|gtk.DIALOG_MODAL
-    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-             gtk.STOCK_OK, gtk.RESPONSE_ACCEPT)
+    mode=Gtk.DIALOG_DESTROY_WITH_PARENT|Gtk.DIALOG_MODAL
+    buttons=(Gtk.STOCK_CANCEL, Gtk.RESPONSE_REJECT,
+             Gtk.STOCK_OK, Gtk.RESPONSE_ACCEPT)
     dialog=BoxDataDialog(title,None,mode,buttons,boxdata,message,self.projectdata)
 
     r = dialog.run()
-    if r==gtk.RESPONSE_ACCEPT:
+    if r==Gtk.RESPONSE_ACCEPT:
       boxdata=dialog.get_boxdata()
     else:
       boxdata=None
@@ -2628,22 +2638,22 @@ class AFMMainArea:
 class Afmmain:
   def __init__(self,uri):
     self.projectdata=ProjectData(uri)
-    self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+    self.window = Gtk.Window(Gtk.WINDOW_TOPLEVEL)
     self.window.set_default_size(360, 300)
-    self.window.connect("destroy", lambda w: gtk.main_quit())
+    self.window.connect("destroy", lambda w: Gtk.main_quit())
     self.window.show()
     layout = AFMMainArea(self.projectdata)
     self.window.add(layout.get_box())
 
   def get_uri_of_base_pdf_by_dialog(self):
-    dialog = gtk.FileChooserDialog('Choose pdf file.',
+    dialog = Gtk.FileChooserDialog('Choose pdf file.',
                                    self.window,
-                                   buttons=(gtk.STOCK_CANCEL,
-                                            gtk.RESPONSE_REJECT,
-                                            gtk.STOCK_OPEN,
-                                            gtk.RESPONSE_ACCEPT))
+                                   buttons=(Gtk.STOCK_CANCEL,
+                                            Gtk.RESPONSE_REJECT,
+                                            Gtk.STOCK_OPEN,
+                                            Gtk.RESPONSE_ACCEPT))
     r = dialog.run()
-    if r==gtk.RESPONSE_ACCEPT:
+    if r==Gtk.RESPONSE_ACCEPT:
       uri=dialog.get_uri()
     else:
       uri==None
@@ -2659,31 +2669,31 @@ if __name__ == "__main__":
   if len(sys.argv)>1 :
     uri='file://'+urllib.pathname2url(os.path.abspath(sys.argv[1]))
   if not uri:
-    dialog = gtk.FileChooserDialog('Choose pdf file.',
+    dialog = Gtk.FileChooserDialog('Choose pdf file.',
                                    None,
-                                   buttons=(gtk.STOCK_CANCEL,
-                                            gtk.RESPONSE_REJECT,
-                                            gtk.STOCK_OPEN,
-                                            gtk.RESPONSE_ACCEPT))
-    filter = gtk.FileFilter()
+                                   buttons=(Gtk.STOCK_CANCEL,
+                                            Gtk.RESPONSE_REJECT,
+                                            Gtk.STOCK_OPEN,
+                                            Gtk.RESPONSE_ACCEPT))
+    filter = Gtk.FileFilter()
     filter.set_name("PDF files")
     filter.add_mime_type("application/pdf")
     filter.add_mime_type("application/x-pdf")
     filter.add_pattern("*.pdf")
     dialog.add_filter(filter)
-    filter = gtk.FileFilter()
+    filter = Gtk.FileFilter()
     filter.set_name("project JSON files")
     filter.add_mime_type("application/json")
     filter.add_mime_type("application/x-json")
     filter.add_pattern("*"+ProjectData.DEFAULT_JSON_EXT)
     dialog.add_filter(filter)
-    filter = gtk.FileFilter()
+    filter = Gtk.FileFilter()
     filter.set_name("All files")
     filter.add_pattern("*")
     dialog.add_filter(filter)
 
     r = dialog.run()
-    if r==gtk.RESPONSE_ACCEPT:
+    if r==Gtk.RESPONSE_ACCEPT:
       uri=dialog.get_uri()
       dialog.destroy()
     else:
@@ -2691,5 +2701,5 @@ if __name__ == "__main__":
 
   if uri:
     Afmmain(uri)
-    gtk.main()
+    Gtk.main()
 
