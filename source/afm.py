@@ -2453,9 +2453,9 @@ class AFMMainArea:
     dialog = Gtk.FileChooserDialog('Select zip file to save.',None,
                                    action=Gtk.FILE_CHOOSER_ACTION_SAVE,
                                    buttons=(Gtk.STOCK_CANCEL,
-                                            Gtk.RESPONSE_REJECT,
+                                            Gtk.ResponseType.REJECT,
                                             Gtk.STOCK_SAVE,
-                                            Gtk.RESPONSE_ACCEPT)
+                                            Gtk.ResponseType.ACCEPT)
                                    )
     dialog.set_current_folder(self.projectdata.destdir)
     dialog.set_current_name(self.projectdata.stylename+'-stylefile.zip')
@@ -2475,7 +2475,7 @@ class AFMMainArea:
     dialog.add_filter(filter)
 
     r = dialog.run()
-    if r!=Gtk.RESPONSE_ACCEPT:
+    if r!=Gtk.ResponseType.ACCEPT:
       dialog.destroy()
       return
     destzipfilename=dialog.get_filename()
@@ -2597,11 +2597,11 @@ class AFMMainArea:
 
   def get_tabledata_by_dialog(self,title,message,current_page):
     mode=Gtk.DIALOG_DESTROY_WITH_PARENT|Gtk.DIALOG_MODAL
-    buttons=(Gtk.STOCK_CANCEL, Gtk.RESPONSE_REJECT,
-             Gtk.STOCK_OK, Gtk.RESPONSE_ACCEPT)                           
+    buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT,
+             Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)                           
     dialog=TableDataDialog(title,None,mode,buttons,message,self.projectdata,current_page)
     r = dialog.run()
-    if r==Gtk.RESPONSE_ACCEPT:
+    if r==Gtk.ResponseType.ACCEPT:
       tabledata=dialog.get_tabledata()
     else:
       tabledata=None
@@ -2610,12 +2610,12 @@ class AFMMainArea:
 
   def get_boxdata_by_dialog(self,boxdata,title,message):
     mode=Gtk.DIALOG_DESTROY_WITH_PARENT|Gtk.DIALOG_MODAL
-    buttons=(Gtk.STOCK_CANCEL, Gtk.RESPONSE_REJECT,
-             Gtk.STOCK_OK, Gtk.RESPONSE_ACCEPT)
+    buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT,
+             Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
     dialog=BoxDataDialog(title,None,mode,buttons,boxdata,message,self.projectdata)
 
     r = dialog.run()
-    if r==Gtk.RESPONSE_ACCEPT:
+    if r==Gtk.ResponseType.ACCEPT:
       boxdata=dialog.get_boxdata()
     else:
       boxdata=None
@@ -2649,11 +2649,11 @@ class Afmmain:
     dialog = Gtk.FileChooserDialog('Choose pdf file.',
                                    self.window,
                                    buttons=(Gtk.STOCK_CANCEL,
-                                            Gtk.RESPONSE_REJECT,
+                                            Gtk.ResponseType.REJECT,
                                             Gtk.STOCK_OPEN,
-                                            Gtk.RESPONSE_ACCEPT))
+                                            Gtk.ResponseType.ACCEPT))
     r = dialog.run()
-    if r==Gtk.RESPONSE_ACCEPT:
+    if r==Gtk.ResponseType.ACCEPT:
       uri=dialog.get_uri()
     else:
       uri==None
@@ -2672,9 +2672,9 @@ if __name__ == "__main__":
     dialog = Gtk.FileChooserDialog('Choose pdf file.',
                                    None,
                                    buttons=(Gtk.STOCK_CANCEL,
-                                            Gtk.RESPONSE_REJECT,
+                                            Gtk.ResponseType.REJECT,
                                             Gtk.STOCK_OPEN,
-                                            Gtk.RESPONSE_ACCEPT))
+                                            Gtk.ResponseType.ACCEPT))
     filter = Gtk.FileFilter()
     filter.set_name("PDF files")
     filter.add_mime_type("application/pdf")
@@ -2693,7 +2693,7 @@ if __name__ == "__main__":
     dialog.add_filter(filter)
 
     r = dialog.run()
-    if r==Gtk.RESPONSE_ACCEPT:
+    if r==Gtk.ResponseType.ACCEPT:
       uri=dialog.get_uri()
       dialog.destroy()
     else:
