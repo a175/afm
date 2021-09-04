@@ -1644,7 +1644,6 @@ class Bar(Gtk.DrawingArea):
     
   def on_self_expose_event(self, widget, event):
     ctx = widget.get_window().cairo_create()
-
     if self.direction & BarOnLayout.MASK_VIRTICAL_BAR:
       c = self.get_line_rgba()
       if c != None:
@@ -1809,6 +1808,22 @@ class BarOnLayout(Gtk.EventBox):
     self.set_hilight()
     self.spinbutton.append_bar(self)
 
+
+  def fit_to_size(self,width,height):
+    if self.direction & self.MASK_VIRTICAL_BAR:
+      if height > self.height: 
+        self.height=max(self.max_y,height)
+        self.drawingarea.height=self.height
+        self.drawingarea.set_size_request(self.width,self.height)
+    else:
+      if width > self.width:
+        self.width=max(self.max_x,width)
+        self.drawingarea.width=self.width
+        self.drawingarea.set_size_request(self.width,self.height)
+
+
+    
+#####$$$$$@@@@@@
 
   def set_hilight(self):
     if self.current_page==self.griddata.page:
@@ -2123,8 +2138,10 @@ class LayoutOverBoxesWithHoganArea:
     else:
       bar=BarOnLayout(2,w,h,self.spb,griddata,p)
     self.rulers.append(bar)
+    bar.fit_to_size(self.layout.get_allocated_width(),self.layout.get_allocated_height())
     bar.show()
     self.layout.add(bar)
+
     bar.set_value(griddata.value)
 
   def add_new_ruler(self):
@@ -2158,7 +2175,10 @@ class LayoutOverBoxesWithHoganArea:
       lwidth = max(rectangle.width, self.projectdata.lwidth)
       lheight = max(rectangle.height, self.projectdata.lheight)
       widget.set_size(lwidth, lheight)
-
+    for bar in self.rulers:
+      bar.fit_to_size(lwidth, lheight)
+      bar.queue_draw()
+    
   def on_page_changed_event(self,widget):
     p=get_int_from_spinbutton(widget)
     self.current_page=p
