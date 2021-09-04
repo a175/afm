@@ -1,34 +1,23 @@
 #!/usr/bin/env python
 
-#import pygtk
-#pygtk.require('2.0')
-
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk 
 from gi.repository import Gdk 
 from gi.repository import Pango
-gi.require_version('Poppler', '0.18')
-from gi.repository import Poppler
+from gi.repository import cairo
 
-import string, time
-#import pango
-#import gtk
+try:
+  gi.require_version('Poppler', '0.18')
+  from gi.repository import Poppler
+  rendering_library_name='poppler'
+except:
+  #To use fitz, install pymupdf not fitz by pip
+  ##pip3 install pymupdf
 
-import cairo
-#try:
-#  import poppler
-#  rendering_library_name='poppler'
-#except:
-#  import fitz
-#  import io
-#  rendering_library_name='mupdf'
-rendering_library_name='poppler'
-#pip3 install pymupdf
-#not fitz 
-#import fitz
-#import io
-#rendering_library_name='mupdf'
+  import fitz
+  import io
+  rendering_library_name='mupdf'
 
 
 import sys
@@ -40,8 +29,11 @@ import urllib.parse
 import urllib.request
 import json
 import re
+import string
+import time
 
-def print_log():
+
+def print_log(comment):
   print("#Log:", comment)
 
 def get_int_from_spinbutton(spinbutton):
@@ -989,7 +981,6 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("virtical align")
     table.attach(label,1,2,4,5)
-    #combobox = Gtk.combo_box_new_text()
     combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_VALIGN):
       combobox.append_text(text)
@@ -1001,7 +992,6 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("horizontal align")
     table.attach(label,1,2,5,6)
-    #combobox = Gtk.combo_box_new_text()
     combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_HALIGN):
       combobox.append_text(text)
@@ -1013,7 +1003,6 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("type")
     table.attach(label,1,2,6,7)
-    #combobox = Gtk.combo_box_new_text()
     combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_TYPE):
       combobox.append_text(text)
@@ -1125,7 +1114,6 @@ class TableDataEntryArea:
     label=Gtk.Label()
     label.set_markup("virtical align")
     table.attach(label,1,2,4,5)
-    #combobox = Gtk.combo_box_new_text()
     combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_VALIGN):
       combobox.append_text(text)
@@ -1138,7 +1126,6 @@ class TableDataEntryArea:
     label=Gtk.Label()
     label.set_markup("horizontal align")
     table.attach(label,1,2,5,6)
-    #combobox = Gtk.combo_box_new_text()
     combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_HALIGN):
       combobox.append_text(text)
@@ -1151,7 +1138,6 @@ class TableDataEntryArea:
     label=Gtk.Label()
     label.set_markup("type")
     table.attach(label,1,2,6,7)
-    #combobox = Gtk.combo_box_new_text()
     combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_TYPE):
       combobox.append_text(text)
@@ -1940,17 +1926,16 @@ class BarOnLayout(Gtk.EventBox):
       else:
         self.margin_x = event.x
         self.margin_y = event.y
-      self.margin_x =self.margin_x-int(self.get_parent().get_hadjustment().get_value())
+      self.margin_x =self.margin_x-int(self.get_parent().get_parent().get_hadjustment().get_value())
 
-      self.margin_y =self.margin_y-int(self.get_parent().get_vadjustment().get_value())
 
-      state = event.state
+      self.margin_y =self.margin_y-int(self.get_parent().get_parent().get_vadjustment().get_value())
     return True
 
   def button_release_event(self,widget, event):
     if not self.draging:
       return True
-    (p,x,y,state) = self.get_parent().get_window().get_pointer()
+    (p,x,y,state)=self.get_parent().get_window().get_device_position(event.device)
     self.draging=False
     if self.direction & self.MASK_VIRTICAL_BAR:
       self.set_value(x-self.margin_x)
@@ -1965,7 +1950,7 @@ class BarOnLayout(Gtk.EventBox):
   def motion_notify_event(self,widget, event):
     if not self.draging:
       return True
-    (p,x,y,state) = self.get_parent().get_window().get_pointer()
+    (p,x,y,state)=self.get_parent().get_window().get_device_position(event.device)
     if state & Gdk.ModifierType.BUTTON1_MASK:
       if self.direction & self.MASK_VIRTICAL_BAR:
         self.move_horizontal(x-self.margin_x)
@@ -1998,7 +1983,7 @@ class TableDataDialog(Gtk.Dialog):
     return self.area.get_tabledata()
 
 class HoganDialog(Gtk.Dialog):
-  def __init__(self,title=None, parent=None,destroy_with_parent=True, buttons=None, projectdata=None,p=0):
+  def __init__(self,title=None, parent=None,destroy_with_parent=True, projectdata=None,p=0):
     Gtk.Dialog.__init__(self,title=title,parent=parent,destroy_with_parent=destroy_with_parent)
     self.area=LayoutOverBoxesWithHoganArea(projectdata,p)
     self.vbox.pack_start(self.area.get_box(),True,True,0)
@@ -2083,7 +2068,6 @@ class LayoutOverBoxesWithHoganArea:
     coordinate_hbox.add(hbox)
     hbox.set_layout(Gtk.ButtonBoxStyle.CENTER)
     
-    #combobox = Gtk.combo_box_new_text()
     combobox = Gtk.ComboBoxText()
     hbox.add(combobox)
     combobox.append_text("---")
@@ -2452,9 +2436,7 @@ class AFMMainArea:
     self.box.show_all()
 
   def open_preview_dialog(self):
-    dialog=HoganDialog("Preview",None,True,
-                       None,
-                       self.projectdata,0)
+    dialog=HoganDialog("Preview",None,True,self.projectdata,0)
     dialog.connect("delete_event", self.on_delete_preview_dialog)
     dialog.show()
     self.preview=dialog
