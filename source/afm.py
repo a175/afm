@@ -6,7 +6,10 @@
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk 
+from gi.repository import Gdk 
 from gi.repository import Pango
+gi.require_version('Poppler', '0.18')
+from gi.repository import Poppler
 
 import string, time
 #import pango
@@ -20,12 +23,12 @@ import cairo
 #  import fitz
 #  import io
 #  rendering_library_name='mupdf'
-
+rendering_library_name='poppler'
 #pip3 install pymupdf
 #not fitz 
-import fitz
-import io
-rendering_library_name='mupdf'
+#import fitz
+#import io
+#rendering_library_name='mupdf'
 
 
 import sys
@@ -58,7 +61,8 @@ def get_pdfdocument_from_uri(uri):
   
 class pdfDocumentByPoppler:
   def __init__(self,uri):
-    self.document = poppler.document_new_from_file(uri,None)
+    #self.document = Poppler.document_new_from_file(uri,None)
+    self.document = Poppler.Document.new_from_file(uri,None)
     self.pages=[ None for i in range(self.get_n_pages())]
       
   def paint_page(self,page,ctx):
@@ -1021,7 +1025,7 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("page")
     table.attach(label,1,2,7,8)
-    adjustment = Gtk.Adjustment(value=boxdata.page,lower=0,upper=projectdata.document.get_n_pages(),step_incr=1)
+    adjustment = Gtk.Adjustment(value=boxdata.page,lower=0,upper=projectdata.document.get_n_pages(),step_increment=1)
     entry=Gtk.SpinButton()
     entry.set_adjustment(adjustment)
     entry.set_value(boxdata.page)
@@ -1031,7 +1035,7 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("top")
     table.attach(label,1,2,8,9)
-    adjustment = Gtk.Adjustment(value=boxdata.y_1,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
+    adjustment = Gtk.Adjustment(value=boxdata.y_1,lower=0,upper=projectdata.lheight,step_increment=1,page_increment=1)
     entry=Gtk.SpinButton()
     entry.set_adjustment(adjustment)
     entry.set_value(boxdata.y_1)
@@ -1041,7 +1045,7 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("bottom")
     table.attach(label,1,2,9,10)
-    adjustment = Gtk.Adjustment(value=boxdata.y_2,lower=0,upper=projectdata.lheight,step_incr=1,page_incr=1)
+    adjustment = Gtk.Adjustment(value=boxdata.y_2,lower=0,upper=projectdata.lheight,step_increment=1,page_increment=1)
     entry=Gtk.SpinButton()
     entry.set_adjustment(adjustment)
     entry.set_value(boxdata.y_2)
@@ -1051,7 +1055,7 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("left")
     table.attach(label,1,2,10,11)
-    adjustment = Gtk.Adjustment(value=boxdata.x_1,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
+    adjustment = Gtk.Adjustment(value=boxdata.x_1,lower=0,upper=projectdata.lwidth,step_increment=1,page_increment=1)
 
     entry=Gtk.SpinButton()
     entry.set_adjustment(adjustment)
@@ -1062,7 +1066,7 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("right")
     table.attach(label,1,2,11,12)
-    adjustment = Gtk.Adjustment(value=boxdata.x_2,lower=0,upper=projectdata.lwidth,step_incr=1,page_incr=1)
+    adjustment = Gtk.Adjustment(value=boxdata.x_2,lower=0,upper=projectdata.lwidth,step_increment=1,page_increment=1)
     entry=Gtk.SpinButton()
     entry.set_adjustment(adjustment)
     entry.set_value(boxdata.x_2)
@@ -1089,7 +1093,7 @@ class BoxDataEntryArea:
   def update_and_get_boxdata(self):
     self.boxdata.name=self.entry_name.get_text()
     (st, end) = self.entry_sampletext.get_buffer().get_bounds()
-    self.boxdata.sampletext=self.entry_sampletext.get_buffer().get_text(st,end)
+    self.boxdata.sampletext=self.entry_sampletext.get_buffer().get_text(st,end,False)
     self.boxdata.valign=self.COMBO_VALIGN[self.entry_valign.get_active()][1]
     self.boxdata.halign=self.COMBO_HALIGN[self.entry_halign.get_active()][1]
     self.boxdata.type=self.COMBO_TYPE[self.entry_type.get_active()][1]
@@ -1160,7 +1164,7 @@ class TableDataEntryArea:
     label=Gtk.Label()
     label.set_markup("page")
     table.attach(label,1,2,7,8)
-    adjustment = Gtk.Adjustment(value=current_page,lower=0,upper=projectdata.document.get_n_pages(),step_incr=1)
+    adjustment = Gtk.Adjustment(value=current_page,lower=0,upper=projectdata.document.get_n_pages(),step_increment=1)
     entry=Gtk.SpinButton()
     entry.set_adjustment(adjustment)
     entry.set_value(current_page)
@@ -1383,8 +1387,8 @@ class LayoutOverBoxes(Gtk.Layout):
     self.page=0
 
   def refresh_preview(self):
-    if self.window:
-      self.window.invalidate_rect(self.allocation,True) 
+    if self.get_window():
+      self.get_window().invalidate_rect(self.get_allocation(),True) 
 
   def set_page(self,page):
     n=self.projectdata.document.get_n_pages()
@@ -1392,15 +1396,16 @@ class LayoutOverBoxes(Gtk.Layout):
       self.page=page % n
     else:
       self.page=page
-    #if self.window:
-    #  self.window.invalidate_rect(self.allocation,True) 
+    self.refresh_preview()
 
+
+    
   def on_self_size_allocate(self, widget, allocation):
     self.width = allocation.width
     self.height = allocation.height
 
   def on_self_expose_event(self, widget, event):
-    ctx = widget.bin_window.cairo_create()
+    ctx = widget.get_bin_window().cairo_create()
     if not self.projectdata:
       return    
     self.projectdata.document.paint_page(self.page,ctx)
@@ -1651,7 +1656,7 @@ class Bar(Gtk.DrawingArea):
     self.height = allocation.height
     
   def on_self_expose_event(self, widget, event):
-    ctx = widget.window.cairo_create()
+    ctx = widget.get_window().cairo_create()
 
     if self.direction & BarOnLayout.MASK_VIRTICAL_BAR:
       c = self.get_line_rgba()
@@ -1703,7 +1708,7 @@ class Bar(Gtk.DrawingArea):
 
 class SpinButtonForBarOnLayout(Gtk.SpinButton):
   def __init__(self,adj_max,id_adj,id_spb):
-    adj=Gtk.Adjustment(value=0,lower=0,upper=adj_max, step_incr=-1)
+    adj=Gtk.Adjustment(value=0,lower=0,upper=adj_max,step_increment=1)
     Gtk.SpinButton.__init__(self)
     self.set_adjustment(adj)
     self.set_width_chars(5)
@@ -1859,7 +1864,7 @@ class BarOnLayout(Gtk.EventBox):
         v=self.max_x
       self.griddata.value=int(v)
       self.move_horizontal(self.griddata.value)
-      self.parent.refresh_preview()
+      self.get_parent().refresh_preview()
     else:
       if v<0:
         v=0
@@ -1867,7 +1872,7 @@ class BarOnLayout(Gtk.EventBox):
         v=self.max_y
       self.griddata.value=int(v)
       self.move_virtical(v)
-      self.parent.refresh_preview()
+      self.get_parent().refresh_preview()
 
 
   def move_to(self,x, y):
@@ -1905,7 +1910,7 @@ class BarOnLayout(Gtk.EventBox):
     if self.spinbutton:
       self.spinbutton.set_current_bar(self)
       self.spinbutton.set_value(self.y)
-    self.parent.move(self,self.x,y)
+    self.get_parent().move(self,self.x,y)
     self.label_box.set_spacing(y*4 % 60)
     self.drawingarea.margin=y*4 % 60
     self.drawingarea.hilight_spot_size=16
@@ -1920,7 +1925,7 @@ class BarOnLayout(Gtk.EventBox):
     if self.spinbutton:
       self.spinbutton.set_current_bar(self)
       self.spinbutton.set_value(self.x)
-    self.parent.move(self, x, self.y)
+    self.get_parent().move(self, x, self.y)
     self.label_box.set_spacing(x*5 % 75)
     self.drawingarea.margin=x*5 % 75
     self.drawingarea.hilight_spot_size=20
@@ -1935,9 +1940,9 @@ class BarOnLayout(Gtk.EventBox):
       else:
         self.margin_x = event.x
         self.margin_y = event.y
-      self.margin_x =self.margin_x-int(self.parent.get_hadjustment().get_value())
+      self.margin_x =self.margin_x-int(self.get_parent().get_hadjustment().get_value())
 
-      self.margin_y =self.margin_y-int(self.parent.get_vadjustment().get_value())
+      self.margin_y =self.margin_y-int(self.get_parent().get_vadjustment().get_value())
 
       state = event.state
     return True
@@ -1945,7 +1950,7 @@ class BarOnLayout(Gtk.EventBox):
   def button_release_event(self,widget, event):
     if not self.draging:
       return True
-    x, y, state = self.parent.window.get_pointer()
+    (p,x,y,state) = self.get_parent().get_window().get_pointer()
     self.draging=False
     if self.direction & self.MASK_VIRTICAL_BAR:
       self.set_value(x-self.margin_x)
@@ -1960,8 +1965,8 @@ class BarOnLayout(Gtk.EventBox):
   def motion_notify_event(self,widget, event):
     if not self.draging:
       return True
-    x, y, state = self.parent.window.get_pointer()
-    if state & Gtk.gdk.BUTTON1_MASK:
+    (p,x,y,state) = self.get_parent().get_window().get_pointer()
+    if state & Gdk.ModifierType.BUTTON1_MASK:
       if self.direction & self.MASK_VIRTICAL_BAR:
         self.move_horizontal(x-self.margin_x)
       else:
@@ -1973,10 +1978,10 @@ class BarOnLayout(Gtk.EventBox):
 
 
 ##################
-
+####@@@@@
 class BoxDataDialog(Gtk.Dialog):
-  def __init__(self,title=None, parent=None, flags=0, buttons=None,boxdata=None,message="",projectdata=None):
-    Gtk.Dialog.__init__(self,title,parent,flags,buttons)
+  def __init__(self,title=None, parent=None, destroy_with_parent=False,boxdata=None,message="",projectdata=None):
+    Gtk.Dialog.__init__(self,title=title,parent=parent,destroy_with_parent=destroy_with_parent)
     self.area=BoxDataEntryArea(boxdata,message,projectdata)
     self.vbox.pack_start(self.area.get_box(),True,True,0)
 
@@ -1984,8 +1989,8 @@ class BoxDataDialog(Gtk.Dialog):
     return self.area.update_and_get_boxdata()
 
 class TableDataDialog(Gtk.Dialog):
-  def __init__(self,title=None, parent=None, flags=0, buttons=None,message="",projectdata=None,current_page=0):
-    Gtk.Dialog.__init__(self,title,parent,flags,buttons)
+  def __init__(self,title=None, parent=None, destroy_with_parent=False,message="",projectdata=None,current_page=0):
+    Gtk.Dialog.__init__(self,title=title,parent=parent,destroy_with_parent=destroy_with_parent)
     self.area=TableDataEntryArea(message,projectdata,current_page)
     self.vbox.pack_start(self.area.get_box(),True,True,0)
 
@@ -2017,30 +2022,17 @@ class LayoutOverBoxesWithHoganArea:
     
     box = Gtk.VBox(homogeneous=False,spacing=0)
     box.show()
-    #table = Gtk.Table(n_rows=2, n_columns=2, homogeneous=False)
-    table = Gtk.Grid()
-    table.show()
-    box.pack_start(table, True, True, 0)
     layout = LayoutOverBoxes(self.projectdata)
     self.layout = layout
     self.layout.set_page(p)
-
-    
-    layout.set_size(self.projectdata.lwidth, self.projectdata.lheight)
+    layout.set_size(self.projectdata.lwidth, self.projectdata.lheight)    
     layout.connect("size-allocate", self.layout_resize)
     layout.show()
-    table.attach(layout, 0, 1, 0, 1)
-    vScrollbar = Gtk.VScrollbar(None)
-    vScrollbar.show()
-    table.attach(vScrollbar, 1, 2, 0, 1)
-    hScrollbar = Gtk.HScrollbar(None)
-    hScrollbar.show()
-    table.attach(hScrollbar, 0, 1, 1, 2)	
-    vAdjust = layout.get_vadjustment()
-    vScrollbar.set_adjustment(vAdjust)
-    hAdjust = layout.get_hadjustment()
-    hScrollbar.set_adjustment(hAdjust)
-    
+    sw = Gtk.ScrolledWindow()
+    sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+    sw.add(layout) 
+    box.pack_start(sw, True, True, 0)
+
     coordinate_hbox=Gtk.HBox(spacing=20)
     self.coordinate_hbox=coordinate_hbox
 
@@ -2052,7 +2044,7 @@ class LayoutOverBoxesWithHoganArea:
     hbox.add(label)
     label.set_markup("Current page: ")
     
-    adj = Gtk.Adjustment(value=p, lower=0,upper=self.projectdata.document.get_n_pages()-1, step_incr=-1)
+    adj = Gtk.Adjustment(value=p, lower=0,upper=self.projectdata.document.get_n_pages()-1, step_increment=1)
     entry=Gtk.SpinButton()
     entry.set_adjustment(adj)
 
@@ -2067,7 +2059,7 @@ class LayoutOverBoxesWithHoganArea:
     label=Gtk.Label()
     hbox.add(label)
     label.set_markup("Forcused grid: ")
-    adj = Gtk.Adjustment(value=p, lower=0,upper=-1, step_incr=-1)
+    adj = Gtk.Adjustment(value=p, lower=0,upper=-1, step_increment=1)
     entry=Gtk.SpinButton()
     entry.set_adjustment(adj)
     hbox.add(entry)
@@ -2100,7 +2092,8 @@ class LayoutOverBoxesWithHoganArea:
     self.new_ruler_will_be_horizontal=True
     combobox.set_active(0)
     
-    button = Gtk.Button(stock=Gtk.STOCK_ADD)
+
+    button = Gtk.Button.new_from_icon_name("list-add",Gtk.IconSize.LARGE_TOOLBAR)
     hbox.add(button)
     self.button_edit=button
     button.connect('clicked', self.add_new_ruler_onclick)
@@ -2108,7 +2101,7 @@ class LayoutOverBoxesWithHoganArea:
 
     self.coordinate_hbox.add(Gtk.VSeparator())
 
-    checkbutton= Gtk.CheckButton("hide all")
+    checkbutton= Gtk.CheckButton(label="hide all")
     checkbutton.show()
     checkbutton.connect("toggled", self.on_toggle_hide_grid)
     self.coordinate_hbox.add(checkbutton)
@@ -2132,7 +2125,7 @@ class LayoutOverBoxesWithHoganArea:
 
     for griddata in self.projectdata.grids:
       self.add_ruler(griddata)
-      
+
   def add_ruler(self,griddata):
     w=self.projectdata.lwidth
     h=self.projectdata.lheight
@@ -2172,10 +2165,10 @@ class LayoutOverBoxesWithHoganArea:
     return self.box
 
   def layout_resize(self, widget, event):
-    x, y, width, height = widget.get_allocation()
-    if width > self.projectdata.lwidth or height > self.projectdata.lheight:
-      lwidth = max(width, self.projectdata.lwidth)
-      lheight = max(height, self.projectdata.lheight)
+    rectangle = widget.get_allocation()
+    if rectangle.width > self.projectdata.lwidth or rectangle.height > self.projectdata.lheight:
+      lwidth = max(rectangle.width, self.projectdata.lwidth)
+      lheight = max(rectangle.height, self.projectdata.lheight)
       widget.set_size(lwidth, lheight)
 
   def on_page_changed_event(self,widget):
@@ -2628,10 +2621,11 @@ class AFMMainArea:
         self.listarea.append_boxdata(boxdata)
 
   def get_tabledata_by_dialog(self,title,message,current_page):
-    mode=Gtk.DIALOG_DESTROY_WITH_PARENT|Gtk.DIALOG_MODAL
-    buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT,
-             Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)                           
-    dialog=TableDataDialog(title,None,mode,buttons,message,self.projectdata,current_page)
+    dialog=TableDataDialog(title,None,True,message,self.projectdata,current_page)
+    dialog.add_buttons(Gtk.STOCK_CANCEL,
+                       Gtk.ResponseType.REJECT,
+                       Gtk.STOCK_OK,
+                       Gtk.ResponseType.ACCEPT)
     r = dialog.run()
     if r==Gtk.ResponseType.ACCEPT:
       tabledata=dialog.get_tabledata()
@@ -2641,11 +2635,11 @@ class AFMMainArea:
     return tabledata
 
   def get_boxdata_by_dialog(self,boxdata,title,message):
-    mode=Gtk.DIALOG_DESTROY_WITH_PARENT|Gtk.DIALOG_MODAL
-    buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT,
-             Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT)
-    dialog=BoxDataDialog(title,None,mode,buttons,boxdata,message,self.projectdata)
-
+    dialog=BoxDataDialog(title,None,True,boxdata,message,self.projectdata)
+    dialog.add_buttons(Gtk.STOCK_CANCEL,
+                       Gtk.ResponseType.REJECT,
+                       Gtk.STOCK_OK,
+                       Gtk.ResponseType.ACCEPT)
     r = dialog.run()
     if r==Gtk.ResponseType.ACCEPT:
       boxdata=dialog.get_boxdata()
@@ -2670,7 +2664,8 @@ class AFMMainArea:
 class Afmmain:
   def __init__(self,uri):
     self.projectdata=ProjectData(uri)
-    self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+    self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+
     self.window.set_default_size(360, 300)
     self.window.connect("destroy", lambda w: Gtk.main_quit())
     self.window.show()
