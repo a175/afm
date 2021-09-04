@@ -985,7 +985,8 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("virtical align")
     table.attach(label,1,2,4,5)
-    combobox = Gtk.combo_box_new_text()
+    #combobox = Gtk.combo_box_new_text()
+    combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_VALIGN):
       combobox.append_text(text)
       if boxdata.valign==v:
@@ -996,7 +997,8 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("horizontal align")
     table.attach(label,1,2,5,6)
-    combobox = Gtk.combo_box_new_text()
+    #combobox = Gtk.combo_box_new_text()
+    combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_HALIGN):
       combobox.append_text(text)
       if boxdata.halign==v:
@@ -1007,7 +1009,8 @@ class BoxDataEntryArea:
     label=Gtk.Label()
     label.set_markup("type")
     table.attach(label,1,2,6,7)
-    combobox = Gtk.combo_box_new_text()
+    #combobox = Gtk.combo_box_new_text()
+    combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_TYPE):
       combobox.append_text(text)
       if boxdata.type==v:
@@ -1118,7 +1121,8 @@ class TableDataEntryArea:
     label=Gtk.Label()
     label.set_markup("virtical align")
     table.attach(label,1,2,4,5)
-    combobox = Gtk.combo_box_new_text()
+    #combobox = Gtk.combo_box_new_text()
+    combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_VALIGN):
       combobox.append_text(text)
       #if boxdata.valign==v:
@@ -1130,7 +1134,8 @@ class TableDataEntryArea:
     label=Gtk.Label()
     label.set_markup("horizontal align")
     table.attach(label,1,2,5,6)
-    combobox = Gtk.combo_box_new_text()
+    #combobox = Gtk.combo_box_new_text()
+    combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_HALIGN):
       combobox.append_text(text)
       #if boxdata.halign==v:
@@ -1142,7 +1147,8 @@ class TableDataEntryArea:
     label=Gtk.Label()
     label.set_markup("type")
     table.attach(label,1,2,6,7)
-    combobox = Gtk.combo_box_new_text()
+    #combobox = Gtk.combo_box_new_text()
+    combobox = Gtk.ComboBoxText()
     for i,(text,v) in enumerate(self.COMBO_TYPE):
       combobox.append_text(text)
       #if boxdata.type==v:
@@ -2085,7 +2091,8 @@ class LayoutOverBoxesWithHoganArea:
     coordinate_hbox.add(hbox)
     hbox.set_layout(Gtk.ButtonBoxStyle.CENTER)
     
-    combobox = Gtk.combo_box_new_text()
+    #combobox = Gtk.combo_box_new_text()
+    combobox = Gtk.ComboBoxText()
     hbox.add(combobox)
     combobox.append_text("---")
     combobox.append_text(" | ")
