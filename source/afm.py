@@ -1324,8 +1324,8 @@ class BoxDataListArea:
     hbox.add(button)
     self.button_remove=button
     
-#    button = Gtk.Button(stock=Gtk.STOCK_EDIT)
-    button = Gtk.Button.new_from_icon_name("list-edit",Gtk.IconSize.LARGE_TOOLBAR)
+    button = Gtk.Button(stock=Gtk.STOCK_EDIT)
+    #button = Gtk.Button.new_from_icon_name("list-edit",Gtk.IconSize.LARGE_TOOLBAR)
     hbox.add(button)
     self.button_edit=button
 
@@ -1391,7 +1391,8 @@ class LayoutOverBoxes(Gtk.Layout):
     self.height = allocation.height
 
   def on_self_expose_event(self, widget, event):
-    ctx = widget.get_bin_window().cairo_create()
+    #ctx = widget.get_bin_window().cairo_create()
+    ctx = widget.get_window().cairo_create()
     if not self.projectdata:
       return    
     self.projectdata.document.paint_page(self.page,ctx)
@@ -2037,7 +2038,8 @@ class LayoutOverBoxesWithHoganArea:
     hbox.add(entry)
 
     
-    self.coordinate_hbox.add(Gtk.VSeparator())
+    #self.coordinate_hbox.add(Gtk.VSeparator())
+    self.coordinate_hbox.add(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
 
     hbox=Gtk.HBox()
     self.coordinate_hbox.add(hbox)
@@ -2109,7 +2111,9 @@ class LayoutOverBoxesWithHoganArea:
 
     for griddata in self.projectdata.grids:
       self.add_ruler(griddata)
+    
 
+    
   def add_ruler(self,griddata):
     w=self.projectdata.lwidth
     h=self.projectdata.lheight
