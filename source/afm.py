@@ -14,11 +14,14 @@ try:
 except:
   #To use fitz, install pymupdf not fitz by pip
   ##pip3 install pymupdf
-
-  import fitz
-  import io
-  rendering_library_name='mupdf'
-
+  try:
+    import fitz
+    import io
+    rendering_library_name='mupdf'
+  except:
+    import pdf2image
+    from gi.repository import GLib, GdkPixbuf
+    rendering_library_name='pdf2image'
 
 import sys
 import zipfile
@@ -48,10 +51,20 @@ def get_pdfdocument_from_uri(uri):
     return pdfDocumentByPoppler(uri)
   elif rendering_library_name=='mupdf':
     return pdfDocumentByPymupdf(uri)
+  elif rendering_library_name=='pdf2image':
+    return pdfDocumentByPdf2image(uri)
   else:
     return None
-  
-class pdfDocumentByPoppler:
+
+class pdfRenderer:
+  def get_n_pages(self):
+    pass
+  def get_size_of_page(self,i):
+    pass
+  def paint_page(self,page,ctx):
+    pass
+
+class pdfDocumentByPoppler(pdfRenderer):
   def __init__(self,uri):
     #self.document = Poppler.document_new_from_file(uri,None)
     self.document = Poppler.Document.new_from_file(uri,None)
@@ -76,8 +89,34 @@ class pdfDocumentByPoppler:
   def get_page_img(self,page):
     return self.document.get_page(page)
 
+class pdfDocumentByPdf2image(pdfRenderer):
+  def __init__(self,uri):
+    #self.document = Poppler.document_new_from_file(uri,None)
+    self.pages = pdf2image.convert_from_path(uri)
+      
+  def get_n_pages(self):
+    return len(self.pages)
 
-class pdfDocumentByPymupdf:
+  def get_size_of_page(self,page):
+    return self.pages[page].size
+
+  def paint_page(self,page,ctx):
+    img = self.image2pixbuf(self.pages[page])
+    #ctx.set_source_pixbuf(self.get_page(page),0,0)
+    Gdk.cairo_set_source_pixbuf(ctx,img,0,0)
+    ctx.paint()
+
+
+  def image2pixbuf(self,im):
+    data = im.tobytes()
+    (w,h) = im.size
+    data = GLib.Bytes.new(data)
+    pix = GdkPixbuf.Pixbuf.new_from_bytes(data, GdkPixbuf.Colorspace.RGB, False, 8, w, h, w * 3)
+    return pix
+  
+
+
+class pdfDocumentByPymupdf(pdfRenderer):
   def __init__(self,uri):
     p=urllib.parse.urlparse(uri)
     path=urllib.parse.unquote(p.path)
