@@ -1,0 +1,357 @@
+% documentonform.sty
+\NeedsTeXFormat{LaTeX2e}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% macros for JSON
+\RequirePackage{catchfile}
+
+% counters and variables
+\newcommand{\nu@json@literal@true}{true}
+\newcommand{\nu@json@literal@false}{false}
+\newcommand{\nu@json@literal@null}{null}
+\newcounter{nu@json@stack@level}
+\newcounter{nu@json@stack@popedlevel}
+\addtocounter{nu@json@stack@level}{1}%
+\newcounter{@nu@json@temp}
+\newcounter{@nu@json@temp@loop@countmax}
+% for stacks and json parser
+\newcommand{\nu@json@stack@increment}[1]{%
+  \setcounter{@nu@json@temp}{\nu@json@stack@get{#1}}%
+  \addtocounter{@nu@json@temp}{1}%
+  \expandafter\edef\csname @nu@json@stack@\thenu@json@stack@level:#1\endcsname{\the@nu@json@temp}%
+}
+\newcommand{\nu@json@stack@set}[2]{%
+\expandafter\def\csname @nu@json@stack@\thenu@json@stack@level:#1\endcsname{#2}%
+}
+\newcommand{\nu@json@stack@eset}[2]{%
+\expandafter\edef\csname @nu@json@stack@\thenu@json@stack@level:#1\endcsname{#2}%
+}
+\newcommand{\nu@json@stack@get}[1]{%
+\csname @nu@json@stack@\thenu@json@stack@level:#1\endcsname%
+}
+\newcommand{\nu@json@stack@get@popedlevel}[1]{%
+\csname @nu@json@stack@\thenu@json@stack@popedlevel:#1\endcsname%
+}
+\newcommand{\nu@json@stack@push}{%
+  \addtocounter{nu@json@stack@level}{1}%
+  \addtocounter{nu@json@stack@popedlevel}{1}%
+  \nu@json@stack@eset{namespace}{\nu@json@stack@get@popedlevel{namespace}->\nu@json@stack@get@popedlevel{key}}%
+}
+\newcommand{\nu@json@stack@pop}{%
+  \addtocounter{nu@json@stack@level}{-1}%
+  \addtocounter{nu@json@stack@popedlevel}{-1}%
+}
+\newcommand{\nu@json@var@set}[2]{%
+\expandafter\def\csname @nu@json@var@val@#1\endcsname{#2}%
+}
+\newcommand{\nu@json@var@eset}[2]{%
+\expandafter\edef\csname @nu@json@var@val@#1\endcsname{#2}%
+}
+\newcommand{\nu@json@var@get}[1]{%
+  \csname @nu@json@var@val@#1\endcsname%
+}
+\newcommand{\nu@json@var@set@value@from@stack}[1]{%
+  \nu@json@var@set{\nu@json@stack@get{namespace}->\nu@json@stack@get{key}}{#1}%
+}
+\newcommand{\nu@json@bracedobject}[1]{%
+  \nu@json@stack@push%
+  \nu@json@stack@set{next}{\nu@json@object@next}%
+  \nu@json@object@keyval#1,]%
+}
+\def\nu@json@object@keyval{\@ifnextchar"{\nu@json@object@key}{\nu@json@object@finish}}
+\def\nu@json@object@key#1"#2"#3:{\nu@json@stack@set{key}{#2}\nu@json@value}
+\def\nu@json@object@next{\@ifnextchar,{\nu@json@object@skip@comma}{\nu@json@object@finish}}
+\def\nu@json@object@skip@comma#1{\nu@json@object@keyval}
+\def\nu@json@object@finish#1{\nu@json@stack@pop\nu@json@stack@get{next}}
+\def\nu@json@braketarray[{%
+    \nu@json@stack@push%
+    \nu@json@stack@set{next}{\nu@json@array@next}%
+    \nu@json@stack@set{key}{0}%
+    \nu@json@array@value%
+}
+\def\nu@json@array@value{\@ifnextchar]{\nu@json@array@finish}{\nu@json@value}}
+\def\nu@json@array@next{%
+  \nu@json@stack@increment{key}%
+  \@ifnextchar,{\nu@json@array@skip@comma}{\nu@json@array@finish}%
+}
+\def\nu@json@array@skip@comma#1{\nu@json@array@value}
+\def\nu@json@array@finish#1{%
+  \nu@json@var@eset{\nu@json@stack@get{namespace}->length}{\nu@json@stack@get{key}}%
+  \nu@json@stack@pop\nu@json@stack@get{next}}
+\def\nu@json@string#1"#2"{%
+  \nu@json@var@set@value@from@stack{#2}%
+  \nu@json@stack@get{next}%
+}
+\def\nu@json@number#1#2{%
+  \@ifnextchar,{\nu@json@number@finish{#1#2}}{%
+    \@ifnextchar]{\nu@json@number@finish{#1#2}}{%
+     \nu@json@number{#1#2}%
+    }
+  }
+}
+\def\nu@json@number@finish#1{%
+      \nu@json@var@set@value@from@stack{#1}%
+      \nu@json@stack@get{next}%
+}
+\def\nu@json@true{\nu@json@var@set@value@from@stack{\nu@json@literal@true}\nu@json@skip@to@end}
+\def\nu@json@false{\nu@json@var@set@value@from@stack{\nu@json@literal@false}\nu@json@skip@to@end}
+\def\nu@json@null{\nu@json@var@set@value@from@stack{\nu@json@literal@null}\nu@json@skip@to@end}
+\def\nu@json@skip@to@end#1{%
+  \@ifnextchar,{\nu@json@stack@get{next}}{%
+    \@ifnextchar]{\nu@json@stack@get{next}}{%
+     \nu@json@skip@to@end%
+    }
+  }
+}
+\def\nu@json@value{%
+  \@ifnextchar"{\nu@json@string}{%
+    \@ifnextchar\bgroup{\nu@json@bracedobject}{%
+      \@ifnextchar[{\nu@json@braketarray}{%
+          \@ifnextchar t{\nu@json@true}{%
+            \@ifnextchar f{\nu@json@false}{%
+              \@ifnextchar n{\nu@json@null}{%
+                \nu@json@number{}{}%
+              }%
+            }%
+          }%
+      }%
+    }%
+  }%
+}
+
+% functions for list of object with ids
+% USAGE: \@nu@json@make@dataindex@dict@for{keyofid}{pathtolist}
+% define pathtolist->keyofid2index->HOGE to be
+% the index i such that pathtolist->i->keyofid is HOGE
+\newcommand{\@nu@json@make@dataindex@dict@for}[2]{\setcounter{@nu@json@temp}{0}%
+\setcounter{@nu@json@temp@loop@countmax}{\nu@json@var@get{jsonroot->#2->length}}%
+\loop\ifnum\value{@nu@json@temp}<\value{@nu@json@temp@loop@countmax}%
+\nu@json@var@eset{jsonroot->#2->#12index->\nu@json@var@get{jsonroot->#2->\number\value{@nu@json@temp}->#1}}{\number\value{@nu@json@temp}}%
+\addtocounter{@nu@json@temp}{1}%
+\repeat}
+% USAGE: \nu@json@jsondata@by{keyofid}{pathtolist}{HOGE}{pathtodata}
+% get value of pathtolist->i->pathtodata for the index i such that pathtolist->i->keyofid is HOGE.
+\newcommand{\nu@json@jsondata@by}[4]{\jsondata{#2->\jsondata{#2->#12index->#3}->#4}}
+
+
+%%%%
+% front ends for json
+%Usage: \inputjsondata{varname}{filename.json}
+\newcommand{\inputjsondata}[2]{%
+  \CatchFileDef\nu@json@temp@jsonfile@contents{#2}{}%
+  \nu@json@stack@set{namespace}{jsonroot}\nu@json@stack@set{key}{#1}%
+  \expandafter\nu@json@bracedobject\nu@json@temp@jsonfile@contents%
+}
+
+%Usage: e.g. \defjsondata{varname}{"a":12,"b":13}
+\newcommand{\defjsondata}[1]{\nu@json@stack@set{namespace}{jsonroot}\nu@json@stack@set{key}{#1}\nu@json@bracedobject}
+
+%Usage: e.g. jsondata{varname->a}
+\newcommand{\jsondata}[1]{\nu@json@var@get{jsonroot->#1}}
+
+
+\newcommand{\nu@input@json@project@data}[2]{%
+  \CatchFileDef\nu@json@temp@jsonfile@contents{#2}{}%
+  \nu@json@stack@set{namespace}{jsonroot}\nu@json@stack@set{key}{#1}%
+  \expandafter\nu@json@bracedobject\nu@json@temp@jsonfile@contents%
+  \@nu@json@make@dataindex@dict@for{name}{#1->boxes}%
+  \@nu@json@make@dataindex@dict@for{id}{#1->grids}%
+}
+%\nu@value@position@of@box{shorui}{boxA}{x_1}
+\newcommand{\nu@index@position@of@box}[3]{\nu@json@jsondata@by{name}{#1->boxes}{#2}{#3}}
+\newcommand{\nu@value@of@grid}[2]{\nu@json@jsondata@by{id}{#1->grids}{#2}{value}}
+\newcommand{\nu@value@position@of@box}[3]{\nu@value@of@grid{#1}{\nu@index@position@of@box{#1}{#2}{#3}}}
+
+
+
+% initialise stack for json
+\nu@json@stack@eset{namespace}{jsonroot}
+\nu@json@stack@eset{key}{jsonroot}
+% /macros for JSON
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% macros for documents
+\RequirePackage{geometry}
+\geometry{ignoreall,scale=1}
+
+% counters and variables
+% Definition of basic commands
+\newif\if@PDF@image@type@nu@
+\@PDF@image@type@nu@true
+\newif\if@js@basecls@nu@
+\@js@basecls@nu@false
+
+\DeclareOption{pdf}{\@PDF@image@type@nu@true}
+\DeclareOption{none}{\@PDF@image@type@nu@false}
+\DeclareOption{js}{\@js@basecls@nu@true}
+\ProcessOptions\relax
+
+\newlength{\unitlength@nu}
+\if@js@basecls@nu@ 
+\setlength{\unitlength@nu}{1truept}
+\else 
+\setlength{\unitlength@nu}{1pt}
+\fi
+\setlength{\unitlength@nu}{1.00375\unitlength@nu}
+
+
+\newcommand{\baseuplength}{-10}
+
+% environment for overwrapping pictures by picuture environment.
+\newenvironment{overwrappicture}[2][]%
+{\newpage\noindent%
+\setlength\unitlength\unitlength@nu\begin{picture}(0,0)(0,\baseuplength)%
+\put(0,0){\makebox(0,0)[tl]{\includegraphics[#1]{#2}}}}%
+{\end{picture}}
+
+\newenvironment{overwrappicture*}[2][1]%
+{\newpage\noindent%
+\setlength\unitlength\unitlength@nu\begin{picture}(0,0)(0,\baseuplength)%
+\put(0,0){\makebox(0,0)[tl]{}}}%
+{\end{picture}}
+
+%% \newcommand{\roundCorners@nu}[3][20]{\setlength\unitlength\unitlength@nu\put(#2,#3){\oval(#1,#1)[tr]}\put(-#2,#3){\oval(#1,#1)[tl]}\put(#2,-#3){\oval(#1,#1)[br]}\put(-#2,-#3){\oval(#1,#1)[bl]}}
+%% \newcommand{\boxWithoutCorners@nu}[4]{\setlength\unitlength\unitlength@nu\put(0,#4){\line(1,0){#1}}\put(0,#4){\line(-1,0){#1}}\put(0,-#4){\line(1,0){#1}}\put(0,-#4){\line(-1,0){#1}}\put(#3,0){\line(0,1){#2}}\put(#3,0){\line(0,-1){#2}}\put(-#3,0){\line(0,1){#2}}\put(-#3,0){\line(0,-1){#2}}}
+%% \newcommand{\put@roundCorners@nu}[7]{\setlength\unitlength\unitlength@nu\put(#1,#2){\roundCorners@nu[#3]{#4}{#5}\boxWithoutCorners@nu{#4}{#5}{#6}{#7}}}
+
+\newcommand{\put@box@@nu}[4][]{\setlength\unitlength\unitlength@nu\put(#2,#3){\makebox(0,0)[#1]{#4}}}
+
+% Definition of commands to put boxes by gloval variables.
+\newcommand{\my@temp@var@x}{}
+\newcommand{\my@temp@var@y}{}
+\newcommand{\my@temp@var@p}{}
+\newenvironment{nu@documentonform@temp@var@local@align}{}{}
+\newlength{\my@temp@var@w}
+\newlength{\my@temp@var@h}
+\newcommand{\set@my@temp@var}[5]{\def\my@temp@var@x{#1}\def\my@temp@var@y{#2}\def\my@temp@var@p{[#3]}\setlength{\my@temp@var@w}{#4}\setlength{\my@temp@var@h}{#5}}
+%%
+\newlength{\nu@documentform@temp@l}
+
+% x1  x2 halign y1 y2 valign p
+\newcommand{\set@my@temp@var@by@coordinate}[6]{%
+  \def\my@temp@var@x{#1}%
+  \setlength{\my@temp@var@w}{#2\unitlength@nu}\addtolength{\my@temp@var@w}{-#1\unitlength@nu}%
+  \setlength{\my@temp@var@h}{-#4\unitlength@nu}\addtolength{\my@temp@var@h}{#5\unitlength@nu}%
+  \ifnum#6=3%
+   \setlength{\nu@documentform@temp@l}{-#4pt}%
+   \addtolength{\nu@documentform@temp@l}{-#5pt}%
+   \setlength{\nu@documentform@temp@l}{0.5\nu@documentform@temp@l}%
+   \edef\my@temp@var@y{\strip@pt\nu@documentform@temp@l}%
+  \def\my@temp@var@p{[l]}%
+  \else%
+  \ifnum#6=2%
+  \def\my@temp@var@y{-#5}%
+  \def\my@temp@var@p{[lb]}%
+  \else%
+  \def\my@temp@var@y{-#4}%
+  \def\my@temp@var@p{[lt]}%
+    \fi%
+    \fi%
+  \ifnum#3=3%
+  \renewenvironment{nu@documentonform@temp@var@local@align}{\begin{center}}{\end{center}}%
+  \else%
+  \ifnum#3=2%
+  \renewenvironment{nu@documentonform@temp@var@local@align}{\begin{flushright}}{\end{flushright}}%
+   \else%
+    \renewenvironment{nu@documentonform@temp@var@local@align}{}{}%
+    \fi%
+  \fi%
+}
+
+\newcommand{\set@my@temp@var@by@coordinate@for@oval}[6]{%
+   \setlength{\nu@documentform@temp@l}{#1pt}%
+   \addtolength{\nu@documentform@temp@l}{#2pt}%
+   \setlength{\nu@documentform@temp@l}{0.5\nu@documentform@temp@l}%
+   \edef\my@temp@var@x{\strip@pt\nu@documentform@temp@l}%
+   \setlength{\nu@documentform@temp@l}{-#4pt}%
+   \addtolength{\nu@documentform@temp@l}{-#5pt}%
+   \setlength{\nu@documentform@temp@l}{0.5\nu@documentform@temp@l}%
+   \edef\my@temp@var@y{\strip@pt\nu@documentform@temp@l}%
+   \setlength{\my@temp@var@w}{#2pt}\addtolength{\my@temp@var@w}{-#1pt}%
+   \setlength{\my@temp@var@h}{-#4pt}\addtolength{\my@temp@var@h}{#5pt}%
+   \def\my@temp@var@p{}%
+   \renewenvironment{nu@documentonform@temp@var@local@align}{}{}%
+}
+
+
+\newlength{\@var@margin@top@nu}
+\newlength{\@var@max@height@nu}
+\newlength{\@var@max@depth@nu}
+\setlength{\@var@margin@top@nu}{0pt}
+\setlength{\@var@max@height@nu}{0pt}
+\setlength{\@var@max@depth@nu}{0pt}
+\newcommand{\update@max@height@depth@nu}[1]{%
+  \ifdim\ht#1>\@var@max@height@nu%
+    \global\setlength{\@var@max@height@nu}{\ht#1}%
+  \fi%
+  \ifdim\dp#1>\@var@max@depth@nu%
+    \global\setlength{\@var@max@depth@nu}{\dp#1}%
+\fi}
+
+\newbox{\MyBlackBox@nu}
+\newenvironment{put@@box@env@nu}{\begin{lrbox}{\MyBlackBox@nu}\begin{minipage}[c]{\my@temp@var@w}\vspace{\@var@margin@top@nu}}{\end{minipage}\end{lrbox}\update@max@height@depth@nu{\MyBlackBox@nu}\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\usebox{\MyBlackBox@nu}}}
+\newenvironment{put@a@box@env@nu}{\begin{put@@box@env@nu}\begin{nu@documentonform@temp@var@local@align}}{\end{nu@documentonform@temp@var@local@align}\end{put@@box@env@nu}}
+\newcommand{\put@a@box@com@nu}[1]{\begin{put@a@box@env@nu}#1\end{put@a@box@env@nu}}
+
+
+\newcommand{\put@@box@strike@nu}{\begin{put@@box@env@nu}\rule[0.22\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\kern -\my@temp@var@w\rule[0.6\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\rule{0pt}{\my@temp@var@h}\end{put@@box@env@nu}}
+\newcommand{\put@@box@checkmark@nu}{\begin{put@@box@env@nu}\centering$\checkmark$\end{put@@box@env@nu}}
+
+\newcommand{\put@oval@nu}[4]{{\oval(#3,#4)}}
+\newcommand{\put@@oval@com@nu}{\setlength\unitlength\unitlength@nu\put(\my@temp@var@x,\my@temp@var@y){\oval(\strip@pt\my@temp@var@w,\strip@pt\my@temp@var@h)}}
+
+\newlength{\@temp@var@margin@top@nu}
+\newcommand{\nextrow@groupedcell@nu}{%
+    \setlength{\@temp@var@margin@top@nu}{\@var@margin@top@nu}%
+    \addtolength{\@temp@var@margin@top@nu}{\baselineskip}%
+    \setlength{\@var@margin@top@nu}{\default@line@skip@nu}%
+    \addtolength{\@var@margin@top@nu}{\@var@max@height@nu}%
+    \addtolength{\@var@margin@top@nu}{\@var@max@depth@nu}%
+    \ifdim\@temp@var@margin@top@nu>\@var@margin@top@nu%
+      \setlength{\@var@margin@top@nu}{\@temp@var@margin@top@nu}%
+    \fi%
+      \setlength{\@var@max@height@nu}{0pt}%
+    \setlength{\@var@max@depth@nu}{0pt}}
+\newenvironment{groupedcell@nu}{%
+  \setlength{\@var@margin@top@nu}{0pt}%
+  \setlength{\@var@max@height@nu}{0pt}%
+  \setlength{\@var@max@depth@nu}{0pt}%
+  \def\nextrow{\nextrow@groupedcell@nu}%
+}{}
+
+\newcommand{\default@line@skip@nu}{0.5\baselineskip}
+\newenvironment{groupedcolumns}{\begin{groupedcell@nu}}{\end{groupedcell@nu}}
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\set@my@temp@var@by@coordinate@from@jsondata}[2]{%
+   \set@my@temp@var@by@coordinate%
+       {\nu@value@position@of@box{#1}{#2}{x_1}}%
+       {\nu@value@position@of@box{#1}{#2}{x_2}}%
+       {\nu@index@position@of@box{#1}{#2}{halign}}%
+       {\nu@value@position@of@box{#1}{#2}{y_1}}%
+       {\nu@value@position@of@box{#1}{#2}{y_2}}%
+       {\nu@index@position@of@box{#1}{#2}{valign}}%
+}
+
+\newcommand{\set@my@temp@var@by@coordinate@for@oval@from@jsondata}[2]{%
+\set@my@temp@var@by@coordinate@for@oval%
+       {\nu@value@position@of@box{#1}{#2}{x_1}}%
+       {\nu@value@position@of@box{#1}{#2}{x_2}}%
+       {\nu@index@position@of@box{#1}{#2}{halign}}%
+       {\nu@value@position@of@box{#1}{#2}{y_1}}%
+       {\nu@value@position@of@box{#1}{#2}{y_2}}%
+       {\nu@index@position@of@box{#1}{#2}{valign}}%
+}
+\newcommand{\nu@documentonform@put@box@com}[3]{\set@my@temp@var@by@coordinate@from@jsondata{#1}{#2}\put@a@box@com@nu{#3}}
+\newenvironment{nu@documentonform@put@box@env}[2]{\set@my@temp@var@by@coordinate@from@jsondata{#1}{#2}\begin{put@a@box@env@nu}}{\end{put@a@box@env@nu}}
+\newcommand{\nu@documentonform@put@checkmark@com}[2]{\set@my@temp@var@by@coordinate@from@jsondata{#1}{#2}\put@@box@checkmark@nu}
+\newcommand{\nu@documentonform@put@strike@com}[2]{\set@my@temp@var@by@coordinate@from@jsondata{#1}{#2}\put@@box@strike@nu}
+\newcommand{\nu@documentonform@put@rule@com}[2]{\set@my@temp@var@by@coordinate@from@jsondata{#1}{#2}\put@@box@rule@nu}
+% \newcommand{\boxIDa}{\boxIDa@roundrectangle@@shorui@nu@}
+\newcommand{\nu@documentonform@put@oval@com}[2]{\set@my@temp@var@by@coordinate@for@oval@from@jsondata{#1}{#2}\put@@oval@com@nu}
+
