@@ -158,7 +158,7 @@
   \@nu@json@make@dataindex@dict@for{name}{#1->boxes}%
   \@nu@json@make@dataindex@dict@for{id}{#1->grids}%
 }
-%\nu@value@position@of@box{shorui}{boxA}{x_1}
+
 \newcommand{\nu@index@position@of@box}[3]{\nu@json@jsondata@by{name}{#1->boxes}{#2}{#3}}
 \newcommand{\nu@value@of@grid}[2]{\nu@json@jsondata@by{id}{#1->grids}{#2}{value}}
 \newcommand{\nu@value@position@of@box}[3]{\nu@value@of@grid{#1}{\nu@index@position@of@box{#1}{#2}{#3}}}
@@ -352,6 +352,5 @@
 \newcommand{\nu@documentonform@put@checkmark@com}[2]{\set@my@temp@var@by@coordinate@from@jsondata{#1}{#2}\put@@box@checkmark@nu}
 \newcommand{\nu@documentonform@put@strike@com}[2]{\set@my@temp@var@by@coordinate@from@jsondata{#1}{#2}\put@@box@strike@nu}
 \newcommand{\nu@documentonform@put@rule@com}[2]{\set@my@temp@var@by@coordinate@from@jsondata{#1}{#2}\put@@box@rule@nu}
-% \newcommand{\boxIDa}{\boxIDa@roundrectangle@@shorui@nu@}
 \newcommand{\nu@documentonform@put@oval@com}[2]{\set@my@temp@var@by@coordinate@for@oval@from@jsondata{#1}{#2}\put@@oval@com@nu}
 

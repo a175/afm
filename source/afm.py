@@ -290,64 +290,80 @@ class applicationFormData:
       r=r + boxdata.name
     return r
 
-  def formfrontenddef_env_l(self,name,as_comment=False):
+  def formfrontenddef_env(self,name,projectname,boxname,as_comment=False):
     if as_comment:
       r="% "
     else:
       r=""
     r=r +r'\newenvironment{'
     r=r + name
+    r=r +r'}{\begin{nu@documentonform@put@box@env}{'
+    r=r + projectname
     r=r +r'}{'
-    r=r + self.setvarATname(name)
-    r=r +r'\begin{put@l@box@env@nu}}{\end{put@l@box@env@nu}}'
+    r=r + boxname
+    r=r +r'}}{\end{nu@documentonform@put@box@env}}'
     return r
-  
-  def formfrontenddef_env_r(self,name,as_comment=False):
-    if as_comment:
-      r="% "
-    else:
-      r=""
-    r=r +r'\newenvironment{'
-    r=r + name
-    r=r +r'}{'
-    r=r + self.setvarATname(name)
-    r=r +r'\begin{put@r@box@env@nu}}{\end{put@r@box@env@nu}}'
-    return r
-  def formfrontenddef_env_c(self,name,as_comment=False):
-    if as_comment:
-      r="% "
-    else:
-      r=""
-    r=r +r'\newenvironment{'
-    r=r +name
-    r=r +r'}{'
-    r=r + self.setvarATname(name)
-    r=r +r'\begin{put@c@box@env@nu}}{\end{put@c@box@env@nu}}'
-    return r
-  def formfrontenddef_com_l(self,name,as_comment=False):
+
+  def formfrontenddef_com(self,name,projectname,boxname,as_comment=False):
     if as_comment:
       r="% "
     else:
       r=""
     r=r +r'\newcommand{'+"\\"
     r=r +name
-    r=r +r'}[1]{'
-    r=r + self.setvarATname(name)
-    r=r +r'\put@l@box@com@nu{#1}}'
+    r=r +r'}[1]{\nu@documentonform@put@box@com{'
+    r=r + projectname
+    r=r +r'}{'
+    r=r + boxname
+    r=r +r'}{#1}}'
     return r
-  def formfrontenddef_com_c(self,name,as_comment=False):
+
+  def formfrontenddef_checkmark(self,name,projectname,boxname,as_comment=False):
     if as_comment:
       r="% "
     else:
       r=""
     
     r=r +r'\newcommand{'+"\\"
-    r=r +name
-    r=r +r'}[1]{'
-    r=r + self.setvarATname(name)
-    r=r +r'\put@c@box@com@nu{#1}}'
+    r=r + name
+    r=r +r'}{\nu@documentonform@put@checkmark@com{'
+    r=r + projectname
+    r=r +r'}{'
+    r=r + boxname
+    r=r +r'}}'
     return r
-  def formfrontenddef_com_r(self,name,as_comment=False):
+
+  def formfrontenddef_strike(self,name,projectname,boxname,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
+    
+    r=r +r'\newcommand{'+"\\"
+    r=r + name
+    r=r +r'}{\nu@documentonform@put@strike@com{'
+    r=r + projectname
+    r=r +r'}{'
+    r=r + boxname
+    r=r +r'}}'
+    return r
+
+  def formfrontenddef_rule(self,name,projectname,boxname,as_comment=False):
+    if as_comment:
+      r="% "
+    else:
+      r=""
+    
+    r=r +r'\newcommand{'+"\\"
+    r=r + name
+    r=r +r'}{\nu@documentonform@put@rule@com{'
+    r=r + projectname
+    r=r +r'}{'
+    r=r + boxname
+    r=r +r'}}'
+    return r
+
+  def formfrontenddef_check_circle(self,name,projectname,boxname,as_comment=False):
     if as_comment:
       r="% "
     else:
@@ -355,90 +371,33 @@ class applicationFormData:
 
     r=r +r'\newcommand{'+"\\"
     r=r + name
-    r=r +r'}[1]{'
-    r=r + self.setvarATname(name)
-    r=r +r'\put@r@box@com@nu{#1}}'
-    return r
-  def formfrontenddef_checkmark(self,name,as_comment=False):
-    if as_comment:
-      r="% "
-    else:
-      r=""
-    
-    r=r +r'\newcommand{'+"\\"
-    r=r + name
+    r=r +r'}{\nu@documentonform@put@oval@com{'
+    r=r + projectname
     r=r +r'}{'
-    r=r + self.setvarATname(name)
-    r=r +r'\put@@box@checkmark@nu}'
+    r=r + boxname
+    r=r +r'}}'
     return r
-  def formfrontenddef_strike(self,name,as_comment=False):
-    if as_comment:
-      r="% "
-    else:
-      r=""
-    
-    r=r +r'\newcommand{'+"\\"
-    r=r + name
-    r=r +r'}{'
-    r=r + self.setvarATname(name)
-    r=r +r'\put@@box@strike@nu}'
-    return r
-  def formfrontenddef_rule(self,name,as_comment=False):
-    if as_comment:
-      r="% "
-    else:
-      r=""
-    
-    r=r +r'\newcommand{'+"\\"
-    r=r +name
-    r=r +r'}{'
-    r=r + self.setvarATname(name)
-    r=r +r'\put@@box@rule@nu}'
-    return r
-  def formfrontenddef_check_circle(self,name,as_comment=False):
-    if as_comment:
-      r="% "
-    else:
-      r=""
-    
-    r=r +r'\newcommand{'+"\\"
-    r=r + name
-    r=r +r'}{'
-    r=r + self.roundrectangleATname(name)
-    r=r +r'}'  
-    return r
-  
-  def formfrontenddef(self,boxdata):
+
+
+  def formfrontenddef(self,boxdata,projectname):
     r=[]
-    as_comment=not(boxdata.type==BoxData.TYPE_ENVIRONMENT and boxdata.halign==BoxData.HALIGN_LEFT)
-    r.append(self.formfrontenddef_env_l(boxdata.name,as_comment))
-    
-    as_comment=not(boxdata.type==BoxData.TYPE_ENVIRONMENT and boxdata.halign==BoxData.HALIGN_RIGHT)
-    r.append(self.formfrontenddef_env_r(boxdata.name,as_comment))
+    as_comment=not(boxdata.type==BoxData.TYPE_ENVIRONMENT)
+    r.append(self.formfrontenddef_env(boxdata.name,projectname,boxdata.name,as_comment))
 
-    as_comment=not(boxdata.type==BoxData.TYPE_ENVIRONMENT and boxdata.halign==BoxData.HALIGN_CENTER)
-    r.append(self.formfrontenddef_env_c(boxdata.name,as_comment))
-
-    as_comment=not(boxdata.type==BoxData.TYPE_COMMAND and boxdata.halign==BoxData.HALIGN_LEFT)
-    r.append(self.formfrontenddef_com_l(boxdata.name,as_comment))
-
-    as_comment=not(boxdata.type==BoxData.TYPE_COMMAND and boxdata.halign==BoxData.HALIGN_RIGHT)
-    r.append(self.formfrontenddef_com_r(boxdata.name,as_comment))
-    
-    as_comment=not(boxdata.type==BoxData.TYPE_COMMAND and boxdata.halign==BoxData.HALIGN_CENTER)
-    r.append(self.formfrontenddef_com_c(boxdata.name,as_comment))
+    as_comment=not(boxdata.type==BoxData.TYPE_COMMAND)
+    r.append(self.formfrontenddef_com(boxdata.name,projectname,boxdata.name,as_comment))
 
     as_comment=not(boxdata.type==BoxData.TYPE_CHECKMARK)
-    r.append(self.formfrontenddef_checkmark(boxdata.name,as_comment))
+    r.append(self.formfrontenddef_checkmark(boxdata.name,projectname,boxdata.name,as_comment))
     
     as_comment=not(boxdata.type==BoxData.TYPE_STRIKE)
-    r.append(self.formfrontenddef_strike(boxdata.name,as_comment))
+    r.append(self.formfrontenddef_strike(boxdata.name,projectname,boxdata.name,as_comment))
 
     as_comment=not(boxdata.type==BoxData.TYPE_RULE)
-    r.append(self.formfrontenddef_rule(boxdata.name,as_comment))
+    r.append(self.formfrontenddef_rule(boxdata.name,projectname,boxdata.name,as_comment))
 
     as_comment=not(boxdata.type==BoxData.TYPE_CHECK_CIRCLE)
-    r.append(self.formfrontenddef_check_circle(boxdata.name,as_comment))
+    r.append(self.formfrontenddef_check_circle(boxdata.name,projectname,boxdata.name,as_comment))
     return "\n".join(r)
 
   def setvardef(self,boxdata):
@@ -646,8 +605,7 @@ class applicationFormData:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Definition of basic commands
 \NeedsTeXFormat{LaTeX2e}
-\RequirePackage{geometry}
-\geometry{ignoreall,scale=1}
+\RequirePackage{documentonform}
 
 \newif\if@PDF@image@type@nu@
 \@PDF@image@type@nu@true
@@ -658,100 +616,14 @@ class applicationFormData:
 \DeclareOption{none}{\@PDF@image@type@nu@false}
 \DeclareOption{js}{\@js@basecls@nu@true}
 \ProcessOptions\relax
-
-\if@js@basecls@nu@ 
-\newcommand{\unitlength@nu}{'''+str(self.UNITLENGTH)+r'''truept}
-\else 
-\newcommand{\unitlength@nu}{'''+str(self.UNITLENGTH)+r'''pt}
-\fi
-
-\newcommand{\baseuplength}{-10}
-
-\newenvironment{overwrappicture}[2][]%
-{\newpage\noindent%
-\setlength\unitlength\unitlength@nu\begin{picture}(0,0)(0,\baseuplength)%
-\put(0,0){\makebox(0,0)[tl]{\includegraphics[#1]{#2}}}}
-{\end{picture}}
-
-\newenvironment{overwrappicture*}[2][1]%
-{\newpage\noindent%
-\setlength\unitlength\unitlength@nu\begin{picture}(0,0)(0,\baseuplength)%
-\put(0,0){\makebox(0,0)[tl]{}}}
-{\end{picture}}
-
-\newcommand{\roundCorners@nu}[3][20]{\setlength\unitlength\unitlength@nu\put(#2,#3){\oval(#1,#1)[tr]}\put(-#2,#3){\oval(#1,#1)[tl]}\put(#2,-#3){\oval(#1,#1)[br]}\put(-#2,-#3){\oval(#1,#1)[bl]}}
-\newcommand{\boxWithoutCorners@nu}[4]{\setlength\unitlength\unitlength@nu\put(0,#4){\line(1,0){#1}}\put(0,#4){\line(-1,0){#1}}\put(0,-#4){\line(1,0){#1}}\put(0,-#4){\line(-1,0){#1}}\put(#3,0){\line(0,1){#2}}\put(#3,0){\line(0,-1){#2}}\put(-#3,0){\line(0,1){#2}}\put(-#3,0){\line(0,-1){#2}}}
-
-\newcommand{\put@roundCorners@nu}[7]{\setlength\unitlength\unitlength@nu\put(#1,#2){\roundCorners@nu[#3]{#4}{#5}\boxWithoutCorners@nu{#4}{#5}{#6}{#7}}}
-
-\newcommand{\put@box@@nu}[4][]{\setlength\unitlength\unitlength@nu\put(#2,#3){\makebox(0,0)[#1]{#4}}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Definition of commands to put boxes by gloval variables.
-\newcommand{\my@temp@var@x}{}
-\newcommand{\my@temp@var@y}{}
-\newcommand{\my@temp@var@p}{}
-\newlength{\my@temp@var@w}
-\newlength{\my@temp@var@h}
-\newcommand{\set@my@temp@var}[5]{\def\my@temp@var@x{#1}\def\my@temp@var@y{#2}\def\my@temp@var@p{[#3]}\setlength{\my@temp@var@w}{#4}\setlength{\my@temp@var@h}{#5}}
-
-\newlength{\@var@margin@top@nu}
-\newlength{\@var@max@height@nu}
-\newlength{\@var@max@depth@nu}
-\setlength{\@var@margin@top@nu}{0pt}
-\setlength{\@var@max@height@nu}{0pt}
-\setlength{\@var@max@depth@nu}{0pt}
-\newcommand{\update@max@height@depth@nu}[1]{%
-  \ifdim\ht#1>\@var@max@height@nu%
-    \global\setlength{\@var@max@height@nu}{\ht#1}%
-  \fi%
-  \ifdim\dp#1>\@var@max@depth@nu%
-    \global\setlength{\@var@max@depth@nu}{\dp#1}%
-\fi}
-
-\newbox{\MyBlackBox@nu}
-\newenvironment{put@@box@env@nu}{\begin{lrbox}{\MyBlackBox@nu}\begin{minipage}[c]{\my@temp@var@w}\vspace{\@var@margin@top@nu}}{\end{minipage}\end{lrbox}\update@max@height@depth@nu{\MyBlackBox@nu}\expandafter\put@box@@nu\my@temp@var@p{\my@temp@var@x}{\my@temp@var@y}{\usebox{\MyBlackBox@nu}}}
-
-
-\newenvironment{put@l@box@env@nu}{\begin{put@@box@env@nu}}{\end{put@@box@env@nu}}
-\newenvironment{put@c@box@env@nu}{\begin{put@@box@env@nu}\begin{center}}{\end{center}\end{put@@box@env@nu}}
-\newenvironment{put@r@box@env@nu}{\begin{put@@box@env@nu}\begin{flushright}}{\end{flushright}\end{put@@box@env@nu}}
-\newcommand{\put@l@box@com@nu}[1]{\begin{put@l@box@env@nu}#1\end{put@l@box@env@nu}}
-\newcommand{\put@c@box@com@nu}[1]{\begin{put@c@box@env@nu}#1\end{put@c@box@env@nu}}
-\newcommand{\put@r@box@com@nu}[1]{\begin{put@r@box@env@nu}#1\end{put@r@box@env@nu}}
-
-\newcommand{\put@@box@strike@nu}{\begin{put@@box@env@nu}\rule[0.22\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\kern -\my@temp@var@w\rule[0.6\my@temp@var@h]{\my@temp@var@w}{0.1666\my@temp@var@h}\rule{0pt}{\my@temp@var@h}\end{put@@box@env@nu}}
-\newcommand{\put@@box@checkmark@nu}{\begin{put@@box@env@nu}\centering$\checkmark$\end{put@@box@env@nu}}
-\newcommand{\put@@box@rule@nu}{\put@l@box@com@nu{\rule{\my@temp@var@w}{\my@temp@var@h}}}
-
-\newlength{\@temp@var@margin@top@nu}
-\newcommand{\nextrow@groupedcell@nu}{%
-    \setlength{\@temp@var@margin@top@nu}{\@var@margin@top@nu}
-    \addtolength{\@temp@var@margin@top@nu}{\baselineskip}
-    \setlength{\@var@margin@top@nu}{\default@line@skip@nu}
-    \addtolength{\@var@margin@top@nu}{\@var@max@height@nu}
-    \addtolength{\@var@margin@top@nu}{\@var@max@depth@nu}
-    \ifdim\@temp@var@margin@top@nu>\@var@margin@top@nu
-      \setlength{\@var@margin@top@nu}{\@temp@var@margin@top@nu}
-    \fi
-      \setlength{\@var@max@height@nu}{0pt}
-    \setlength{\@var@max@depth@nu}{0pt}}
-\newenvironment{groupedcell@nu}{
-  \setlength{\@var@margin@top@nu}{0pt}
-  \setlength{\@var@max@height@nu}{0pt}
-  \setlength{\@var@max@depth@nu}{0pt}
-  \def\nextrow{\nextrow@groupedcell@nu}
-}{}
-
-\newcommand{\default@line@skip@nu}{0.5\baselineskip}
-\newenvironment{groupedcolumns}{\begin{groupedcell@nu}}{\end{groupedcell@nu}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 '''
   
   def get_style_code(self):
     r="%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     r=r+self.common_command()
-    r=r+"\n\n% End of common commands\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n%%% Definition of forms.\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
+    r=r+'\nu@input@json@project@data{shorui}{projectdata.json}'+"\n"
+
     page_atfirst=""
     page_def=""
     page_front=""
@@ -766,10 +638,10 @@ class applicationFormData:
       form_front=form_front+"\n% page "+str(i+1)+" i.e.," +self.int2alphabet(i)
       form_def=form_def+"\n% page "+str(i+1)+" i.e.," +self.int2alphabet(i)
       for boxdata in self.projectdata.x_boxdata_in_the_page(i):
-        form_def=form_def+"\n"+self.setvardef(boxdata)
+        #form_def=form_def+"\n"+self.setvardef(boxdata)
         #form_front=form_front+"\n\n"+self.setvardef(boxdata)
-        form_def=form_def+"\n"+self.roundcircledef(boxdata)+"\n\n"
-        form_front=form_front+"\n\n"+self.formfrontenddef(boxdata)
+        #form_def=form_def+"\n"+self.roundcircledef(boxdata)+"\n\n"
+        form_front=form_front+"\n\n"+self.formfrontenddef(boxdata,self.projectdata.localcommandsuffix)
         form_front=form_front+"\n"
         
     table_backend=""
@@ -1862,7 +1734,7 @@ class BarOnLayout(Gtk.EventBox):
 
 
     
-#####$$$$$@@@@@@
+
 
   def set_hilight(self):
     if self.current_page==self.griddata.page:
