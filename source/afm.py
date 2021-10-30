@@ -24,7 +24,7 @@ except:
     import io
     from gi.repository import GLib, GdkPixbuf
     rendering_library_name='pdf2image'
-
+print("Loaded", rendering_library_name, "as pdf rendering library")
 import sys
 import zipfile
 import os.path
