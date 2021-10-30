@@ -20,6 +20,8 @@ except:
     rendering_library_name='mupdf'
   except:
     import pdf2image
+    import pdfrw
+    import io
     from gi.repository import GLib, GdkPixbuf
     rendering_library_name='pdf2image'
 
@@ -92,8 +94,12 @@ class pdfDocumentByPoppler(pdfRenderer):
 class pdfDocumentByPdf2image(pdfRenderer):
   def __init__(self,uri):
     #self.document = Poppler.document_new_from_file(uri,None)
-    self.pages = pdf2image.convert_from_path(uri)
-      
+    filename = uri[7:]
+    pdf = pdfrw.PdfReader(filename)
+    bb=pdf.pages[0].MediaBox
+    size=(float(bb[2]),float(bb[3]))
+    #self.pages = pdf2image.convert_from_path(uri,size=size,fmt="png")
+    self.pages = pdf2image.convert_from_path(uri,size=size)
   def get_n_pages(self):
     return len(self.pages)
 
@@ -102,9 +108,11 @@ class pdfDocumentByPdf2image(pdfRenderer):
 
   def paint_page(self,page,ctx):
     img = self.image2pixbuf(self.pages[page])
-    #ctx.set_source_pixbuf(self.get_page(page),0,0)
     Gdk.cairo_set_source_pixbuf(ctx,img,0,0)
     ctx.paint()
+    #img = self.image2imagesurface(self.pages[page])
+    #ctx.set_source_surface(img,0,0)
+    #ctx.paint()
 
 
   def image2pixbuf(self,im):
@@ -113,6 +121,9 @@ class pdfDocumentByPdf2image(pdfRenderer):
     data = GLib.Bytes.new(data)
     pix = GdkPixbuf.Pixbuf.new_from_bytes(data, GdkPixbuf.Colorspace.RGB, False, 8, w, h, w * 3)
     return pix
+  
+  def image2imagesurface(self,img):
+    return cairo.image_surface_create(img)
   
 
 
@@ -622,13 +633,12 @@ class applicationFormData:
   def get_style_code(self):
     r="%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
     r=r+self.common_command()
-    r=r+'\nu@input@json@project@data{shorui}{projectdata.json}'+"\n"
+    r=r+r'\nu@input@json@project@data{'+self.projectdata.localcommandsuffix+'}{projectdata.json}'+"\n"
 
     page_atfirst=""
     page_def=""
     page_front=""
     form_front=""
-    form_def=""
 
     for i in self.projectdata.get_pages_with_boxdata():
       page_front=page_front+"\n"+self.pagedef_frontend(i)
@@ -636,7 +646,6 @@ class applicationFormData:
       page_def=page_def+"\n"+self.pagedef_pdf(i)
       page_atfirst=page_atfirst+"\n"+self.def_page_atfirst(i)
       form_front=form_front+"\n% page "+str(i+1)+" i.e.," +self.int2alphabet(i)
-      form_def=form_def+"\n% page "+str(i+1)+" i.e.," +self.int2alphabet(i)
       for boxdata in self.projectdata.x_boxdata_in_the_page(i):
         #form_def=form_def+"\n"+self.setvardef(boxdata)
         #form_front=form_front+"\n\n"+self.setvardef(boxdata)
@@ -653,9 +662,6 @@ class applicationFormData:
     r=r+page_def
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Backend commands for table forms."
     r=r+table_backend
-    r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Definition of position of each box.\n"
-    r=r+"% Set vars for x, y, pos, width, height.\n"
-    r=r+form_def
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Forntend commands of boxes\n"
     r=r+form_front
     r=r+"\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%\n% Forntend commands of pages\n"
@@ -674,7 +680,7 @@ class applicationFormData:
     
     r=r+"TEXFILE="+sample_file+"\n\n"
     r=r+"all: pdf\ndvi: ${TEXFILE}.dvi\npdf: ${TEXFILE}.pdf\n\n"
-    r=r+"${TEXFILE}.dvi: ${TEXFILE}.tex ${STYLEFILE}.sty\n\t${LATEX} ${TEXFILE} && ${LATEX} ${TEXFILE}\n"
+    r=r+"${TEXFILE}.dvi: ${TEXFILE}.tex ${STYLEFILE}.sty documentonform.sty\n\t${LATEX} ${TEXFILE} && ${LATEX} ${TEXFILE}\n"
     r=r+"${TEXFILE}.pdf: ${TEXFILE}.dvi\n\t${DVI2PDF} ${TEXFILE}.dvi\n"
     r=r+"clean:\n\trm -f ${TEXFILE}.dvi ${TEXFILE}.pdf ${TEXFILE}.log ${TEXFILE}.aux texput.log"
     return r
