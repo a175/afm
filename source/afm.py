@@ -5,6 +5,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk 
 from gi.repository import Gio 
 from gi.repository import Gdk 
+from gi.repository import GdkPixbuf 
 from gi.repository import Pango
 from gi.repository import cairo
 
@@ -1244,6 +1245,7 @@ class BoxDataListArea:
     
     button = Gtk.Button(stock=Gtk.STOCK_EDIT)
     #button = Gtk.Button.new_from_icon_name("list-edit",Gtk.IconSize.LARGE_TOOLBAR)
+    #button = Gtk.Button.new_from_icon_name("gtk-edit",Gtk.IconSize.LARGE_TOOLBAR)
     hbox.add(button)
     self.button_edit=button
 
@@ -2589,22 +2591,37 @@ class AFMMainWindow(Gtk.ApplicationWindow):
   def __init__(self, uri, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.projectdata=ProjectData(uri)
+    self.build_ui()
     self.set_default_size(360, 300)
-    layout = AFMMainArea(self.projectdata)
-    self.add(layout.get_box())
     self.show()
         
+  def build_ui(self):
+    layout = AFMMainArea(self.projectdata)
+    self.add(layout.get_box())
 
+  
 class AFMApplication(Gtk.Application):
   def __init__(self,*args, **kwargs):
     super().__init__(*args, **kwargs)
     self.set_flags(Gio.ApplicationFlags.HANDLES_OPEN)
 
+    self.APP_NAME="AFM"
+    self.APP_VERSION="3.0.0"
+    self.APP_DESCRIPTION="AFM is not a fusy mule. Application Form Maker."
+    self.APP_URL="https://github.com/a175/afm/"
+    self.APP_LOGO_FILE=None
+    #self.APP_LOGO_FILE="./icon.png"
+    self.MENUBAR_XML_FILENAME =  "./afm_ui.xml"
+
+
+
+
+  def do_startup(self):
+    Gtk.Application.do_startup(self)
+    self.build_menubar()
   def do_activate(self):
-    uri=self.get_uri_of_base_pdf_by_dialog()
-    if uri:
-      window=AFMMainWindow(uri,application=self)
-      window.present()
+    self.select_file_and_open_as_new()
+
   def do_open(self,files,n_files,hint):
     for gfile in files:
       print(gfile.get_path(),gfile.get_uri())
@@ -2612,8 +2629,8 @@ class AFMApplication(Gtk.Application):
     window=AFMMainWindow(uri,application=self)
     window.present()
 
-  def get_uri_of_base_pdf_by_dialog(self):
-    dialog = Gtk.FileChooserDialog(title='Choose pdf file.',parent=None)
+  def select_file_and_open_as_new(self):
+    dialog = Gtk.FileChooserDialog(title='Choose pdf file.',parent=None,action=Gtk.FileChooserAction.OPEN)
     dialog.add_buttons(Gtk.STOCK_CANCEL,
                        Gtk.ResponseType.REJECT,
                        Gtk.STOCK_OPEN,
@@ -2637,12 +2654,64 @@ class AFMApplication(Gtk.Application):
 
     r = dialog.run()
     if r==Gtk.ResponseType.ACCEPT:
-      uri=dialog.get_uri()
+      file=dialog.get_file()
       dialog.destroy()      
+      self.open([file],"open_as_new")
     else:
       uri=None
       dialog.destroy()
-    return uri
+
+  def build_menubar(self):
+    builder = Gtk.Builder.new_from_file(self.MENUBAR_XML_FILENAME)
+    menubar = builder.get_object("menubar")
+    self.set_menubar(menubar)
+    
+    action = Gio.SimpleAction.new("open", None)
+    action.connect("activate", self.on_open)
+    self.add_action(action)
+    
+    action = Gio.SimpleAction.new("quit", None)
+    action.connect("activate", self.on_quit)
+    self.add_action(action)
+    
+    action = Gio.SimpleAction.new("about", None)
+    action.connect("activate", self.on_about)
+    self.add_action(action)
+    
+    action = Gio.SimpleAction.new("help", None)
+    action.connect("activate", self.on_help)
+    self.add_action(action)
+    
+
+  def on_quit(self,action,param):
+    self.quit()
+
+  def on_about(self, action, param):
+    about_dialog = Gtk.AboutDialog()
+    about_dialog.set_program_name(self.APP_NAME)
+    about_dialog.set_version(self.APP_VERSION)
+    about_dialog.set_website(self.APP_URL)
+    about_dialog.set_comments(self.APP_DESCRIPTION)
+    if self.APP_LOGO_FILE:
+      pixbuf=GdkPixbuf.Pixbuf.new_from_file(self.APP_LOGO_FILE)
+      about_dialog.set_logo(pixbuf)
+    about_dialog.present()
+
+    
+  def on_help(self, action, param):
+    help_dialog = Gtk.MessageDialog(flags=0,buttons=Gtk.ButtonsType.OK,text="Help")
+    help_dialog.format_secondary_text("Help for AFM")
+    link=Gtk.LinkButton.new_with_label("https://github.com/a175/afm/","link to help")
+    link.show()
+    contentarea=help_dialog.get_content_area()
+    contentarea.add(link)
+    help_dialog.run()
+    help_dialog.destroy()
+
+
+  def on_open(self,action,param):
+    self.select_file_and_open_as_new()
+
 
 def main():
   app=AFMApplication()
