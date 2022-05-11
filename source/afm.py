@@ -2611,14 +2611,12 @@ class Afmmain:
     return uri
 
 
-
-
-
-if __name__ == "__main__":
-  uri=None
-  if len(sys.argv)>1 :
-    uri='file://'+urllib.request.pathname2url(os.path.abspath(sys.argv[1]))
-  if not uri:
+class AFMApplication(Gtk.Application):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.set_flags(Gio.ApplicationFlags.HANDLES_OPEN)
+  def do_activate(self):
+    uri=None
     dialog = Gtk.FileChooserDialog(title='Choose pdf file.',parent=None)
     dialog.add_buttons(Gtk.STOCK_CANCEL,
                        Gtk.ResponseType.REJECT,
@@ -2648,7 +2646,20 @@ if __name__ == "__main__":
     else:
       dialog.destroy()
 
-  if uri:
+    if uri:
+      Afmmain(uri)
+
+  def do_open(self,files,n_files,hint):
+    for gfile in files:
+      print(gfile.get_path(),gfile.get_uri())
+      uri=gfile.get_uri()
     Afmmain(uri)
-    Gtk.main()
+      
+def main():
+  app=AFMApplication()
+  app.run(sys.argv)
+
+  
+if __name__ == "__main__":
+  main()
 
