@@ -2585,33 +2585,32 @@ class AFMMainArea:
       return True
 ###
 
-class Afmmain:
-  def __init__(self,uri):
+class AFMMainWindow(Gtk.ApplicationWindow):
+  def __init__(self, uri, *args, **kwargs):
+    super().__init__(*args, **kwargs)
     self.projectdata=ProjectData(uri)
-    self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-
-    self.window.set_default_size(360, 300)
-    self.window.connect("destroy", lambda w: Gtk.main_quit())
-    self.window.show()
+    self.set_default_size(360, 300)
     layout = AFMMainArea(self.projectdata)
-    self.window.add(layout.get_box())
-
+    self.add(layout.get_box())
+    self.show()
+        
 
 class AFMApplication(Gtk.Application):
-  def __init__(self, *args, **kwargs):
+  def __init__(self,*args, **kwargs):
     super().__init__(*args, **kwargs)
     self.set_flags(Gio.ApplicationFlags.HANDLES_OPEN)
 
   def do_activate(self):
     uri=self.get_uri_of_base_pdf_by_dialog()
     if uri:
-      Afmmain(uri)
-
+      window=AFMMainWindow(uri,application=self)
+      window.present()
   def do_open(self,files,n_files,hint):
     for gfile in files:
       print(gfile.get_path(),gfile.get_uri())
       uri=gfile.get_uri()
-    Afmmain(uri)
+    window=AFMMainWindow(uri,application=self)
+    window.present()
 
   def get_uri_of_base_pdf_by_dialog(self):
     dialog = Gtk.FileChooserDialog(title='Choose pdf file.',parent=None)
@@ -2648,7 +2647,6 @@ class AFMApplication(Gtk.Application):
 def main():
   app=AFMApplication()
   app.run(sys.argv)
-  Gtk.main()
 
   
 if __name__ == "__main__":
