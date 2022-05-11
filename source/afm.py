@@ -2596,21 +2596,6 @@ class Afmmain:
     layout = AFMMainArea(self.projectdata)
     self.window.add(layout.get_box())
 
-  def get_uri_of_base_pdf_by_dialog(self):
-    dialog = Gtk.FileChooserDialog(title='Choose pdf file.',
-                                   parent=self.window)
-    dialog.add_buttons(Gtk.STOCK_CANCEL,
-                       Gtk.ResponseType.REJECT,
-                       Gtk.STOCK_OPEN,
-                       Gtk.ResponseType.ACCEPT)
-    r = dialog.run()
-    if r==Gtk.ResponseType.ACCEPT:
-      uri=dialog.get_uri()
-    else:
-      uri==None
-    dialog.destroy()
-    return uri
-
 
 class AFMApplication(Gtk.Application):
   def __init__(self, *args, **kwargs):
