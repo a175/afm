@@ -2607,7 +2607,7 @@ class AFMApplication(Gtk.Application):
 
     self.APP_NAME="AFM"
     self.APP_VERSION="3.0.0"
-    self.APP_DESCRIPTION="AFM is not a fusy mule. Application Form Maker."
+    self.APP_DESCRIPTION="AFM is not a fuzzy mule. Application Form Maker."
     self.APP_URL="https://github.com/a175/afm/"
     self.APP_LOGO_FILE=None
     #self.APP_LOGO_FILE="./icon.png"
