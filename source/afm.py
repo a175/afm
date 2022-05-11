@@ -3,6 +3,7 @@
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk 
+from gi.repository import Gio 
 from gi.repository import Gdk 
 from gi.repository import Pango
 from gi.repository import cairo
@@ -2615,8 +2616,19 @@ class AFMApplication(Gtk.Application):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.set_flags(Gio.ApplicationFlags.HANDLES_OPEN)
+
   def do_activate(self):
-    uri=None
+    uri=self.get_uri_of_base_pdf_by_dialog()
+    if uri:
+      Afmmain(uri)
+
+  def do_open(self,files,n_files,hint):
+    for gfile in files:
+      print(gfile.get_path(),gfile.get_uri())
+      uri=gfile.get_uri()
+    Afmmain(uri)
+
+  def get_uri_of_base_pdf_by_dialog(self):
     dialog = Gtk.FileChooserDialog(title='Choose pdf file.',parent=None)
     dialog.add_buttons(Gtk.STOCK_CANCEL,
                        Gtk.ResponseType.REJECT,
@@ -2642,22 +2654,16 @@ class AFMApplication(Gtk.Application):
     r = dialog.run()
     if r==Gtk.ResponseType.ACCEPT:
       uri=dialog.get_uri()
-      dialog.destroy()
+      dialog.destroy()      
     else:
+      uri=None
       dialog.destroy()
+    return uri
 
-    if uri:
-      Afmmain(uri)
-
-  def do_open(self,files,n_files,hint):
-    for gfile in files:
-      print(gfile.get_path(),gfile.get_uri())
-      uri=gfile.get_uri()
-    Afmmain(uri)
-      
 def main():
   app=AFMApplication()
   app.run(sys.argv)
+  Gtk.main()
 
   
 if __name__ == "__main__":
