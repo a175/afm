@@ -2119,6 +2119,14 @@ class LayoutOverBoxesWithHoganArea:
   def get_currentpage(self):
     return self.layout.page
 
+
+class ProjectApplicationData:
+  def __init__(self):
+    self.current_page=0
+
+  def set_current_page(self,p):
+    self.current_page=p
+
 class ProjectData:
   HEIGHT = 600
   WIDTH = 600
@@ -2132,6 +2140,8 @@ class ProjectData:
     path=urllib.parse.unquote(p.path)
     (self.destdir,filename)=os.path.split(path)
     (base,ext)=os.path.splitext(filename)
+
+    self.project_application_data=ProjectApplicationData()
     
     if ext==self.DEFAULT_JSON_EXT:
       f = open(path)
@@ -2375,9 +2385,15 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     self.projectdata=ProjectData(uri)
     self.preview=None    
     self.build_ui()
+    self.connect_menu_actions()
     self.set_default_size(360, 300)
     self.show_all()
-        
+
+  def connect_menu_actions(self):
+    action = Gio.SimpleAction.new("saveas", None)
+    action.connect("activate", self.on_click_save_as)
+    self.add_action(action)
+    
   def build_ui(self):
     box=Gtk.VBox()
     self.add(box)
@@ -2549,7 +2565,7 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     if self.preview == None:
       self.open_preview_dialog()
 
-  def on_click_save_as(self,widget):
+  def on_click_save_as(self,widget,param=None):
     dialog = Gtk.FileChooserDialog(title='Select zip file to save.',
                                    parent=None,
                                    action=Gtk.FileChooserAction.SAVE)
