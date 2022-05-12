@@ -5,6 +5,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk 
 from gi.repository import Gio 
 from gi.repository import Gdk 
+from gi.repository import GLib
 from gi.repository import GdkPixbuf 
 from gi.repository import Pango
 from gi.repository import cairo
@@ -2393,6 +2394,11 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     action = Gio.SimpleAction.new("saveas", None)
     action.connect("activate", self.on_click_save_as)
     self.add_action(action)
+
+    action = Gio.SimpleAction.new_stateful("toggle_preview", None, GLib.Variant.new_boolean(False))
+    action.connect("change-state", self.on_toggle_preview)
+    self.add_action(action)
+    self.toggle_preview_action=action
     
   def build_ui(self):
     box=Gtk.VBox()
@@ -2549,22 +2555,30 @@ class AFMMainWindow(Gtk.ApplicationWindow):
   def on_click_addtable(self,widget):
     self.confirm_and_addtable()
 
+
+  def toggle_preview_dialog(self):
+    if self.preview:
+      self.preview.destroy()
+      self.preview=None
+      self.open_preview_button.set_sensitive(True)
+      self.toggle_preview_action.set_state(GLib.Variant.new_boolean(False))
+    else:
+      self.open_preview_button.set_sensitive(False)
+      self.toggle_preview_action.set_state(GLib.Variant.new_boolean(True))
+      dialog=HoganDialog("Preview",None,True,self.projectdata,0)
+      dialog.connect("delete_event", self.on_delete_preview_dialog)
+      dialog.show()
+      self.preview=dialog
+
   def on_delete_preview_dialog(self,widget,event,data=None):
-    self.preview=None
-    self.open_preview_button.set_sensitive(True)
-    return False
-  
-  def open_preview_dialog(self):
-    dialog=HoganDialog("Preview",None,True,self.projectdata,0)
-    dialog.connect("delete_event", self.on_delete_preview_dialog)
-    dialog.show()
-    self.preview=dialog
+    self.toggle_preview_dialog()
   
   def on_click_preview(self,widget):
-    self.open_preview_button.set_sensitive(False)
-    if self.preview == None:
-      self.open_preview_dialog()
+    self.toggle_preview_dialog()
 
+  def on_toggle_preview(self,action,value):
+    self.toggle_preview_dialog()
+    
   def on_click_save_as(self,widget,param=None):
     dialog = Gtk.FileChooserDialog(title='Select zip file to save.',
                                    parent=None,
