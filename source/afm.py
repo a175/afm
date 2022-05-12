@@ -2335,7 +2335,39 @@ class ProjectData:
   def dump_as_json(self):
     d=self.dump_as_dictionary()
     return json.dumps(d,indent=2)
+
+  def new_boxdata_at_page(self,page):
+    p=page
+    x1=0
+    x2=1
+    y1=2
+    y2=3
+
+    xx=[(griddata.value,griddata.id) for griddata in self.grids if not griddata.is_horizontal  if griddata.page==p]
+    if len(xx)>0:
+      xx.sort()
+      x1=xx[0][1]
+      x2=xx[-1][1]
+    else:
+      xx=[(griddata.value,griddata.id) for griddata in self.grids if not griddata.is_horizontal]
+      if len(xx)>0:
+        xx.sort()
+        x1=xx[0][1]
+        x2=xx[-1][1]
+    yy=[(griddata.value,griddata.id) for griddata in self.grids if  griddata.is_horizontal and griddata.page==p]
+    if len(yy)>0:
+      yy.sort()
+      y1=yy[0][1]
+      y2=yy[-1][1]
+    else:
+      yy=[(griddata.value,griddata.id) for griddata in self.grids if griddata.is_horizontal]
+      if len(yy)>0:
+        yy.sort()
+        y1=yy[0][1]
+        y2=yy[-1][1]
     
+    return BoxData(p,x1,x2,y1,y2)
+
 
 class AFMMainWindow(Gtk.ApplicationWindow):
   def __init__(self, uri, *args, **kwargs):
@@ -2383,41 +2415,6 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     hbbox.show_all()
 
 
-  def get_initial_boxdata(self):
-    p=0
-    x1=0
-    x2=1
-    y1=2
-    y2=3
-    if self.preview != None:
-      p=self.preview.get_currentpage()
-
-    xx=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if not griddata.is_horizontal  if griddata.page==p]
-    if len(xx)>0:
-      xx.sort()
-      x1=xx[0][1]
-      x2=xx[-1][1]
-    else:
-      xx=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if not griddata.is_horizontal]
-      if len(xx)>0:
-        xx.sort()
-        x1=xx[0][1]
-        x2=xx[-1][1]
-    yy=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if  griddata.is_horizontal and griddata.page==p]
-    if len(yy)>0:
-      yy.sort()
-      y1=yy[0][1]
-      y2=yy[-1][1]
-    else:
-      yy=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if griddata.is_horizontal]
-      if len(yy)>0:
-        yy.sort()
-        y1=yy[0][1]
-        y2=yy[-1][1]
-    
-    return BoxData(p,x1,x2,y1,y2)
-  
-
   def refresh_preview(self):
       if self.preview:
         self.preview.refresh_preview()
@@ -2457,9 +2454,11 @@ class AFMMainWindow(Gtk.ApplicationWindow):
       self.projectdata.add_boxdata(boxdata)
       self.refresh_preview()
 
-
   def on_click_new(self,widget):
-    boxdata=self.get_initial_boxdata()
+    p=0
+    if self.preview != None:
+      p=self.preview.get_currentpage()
+    boxdata=self.projectdata.new_boxdata_at_page(p)
     self.confirm_and_add(boxdata)
 
   def confirm_and_remove_by_id(self,boxid,model,itera):
