@@ -1899,7 +1899,6 @@ class BarOnLayout(Gtk.EventBox):
 
 
 ##################
-####@@@@@
 class BoxDataDialog(Gtk.Dialog):
   def __init__(self,title=None, parent=None, destroy_with_parent=False,boxdata=None,message="",projectdata=None):
     Gtk.Dialog.__init__(self,title=title,parent=parent,destroy_with_parent=destroy_with_parent)
@@ -2337,13 +2336,22 @@ class ProjectData:
     d=self.dump_as_dictionary()
     return json.dumps(d,indent=2)
     
-class AFMMainArea:
-  def __init__(self,projectdata):
-    self.projectdata=projectdata
+
+class AFMMainWindow(Gtk.ApplicationWindow):
+  def __init__(self, uri, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.projectdata=ProjectData(uri)
     self.preview=None    
-    self.box=Gtk.VBox()
+    self.build_ui()
+    self.set_default_size(360, 300)
+    self.show_all()
+        
+  def build_ui(self):
+    box=Gtk.VBox()
+    self.add(box)
+
     listarea=BoxDataListArea(self)
-    self.box.pack_start(listarea.get_vbox(),True,True,0)
+    box.pack_start(listarea.get_vbox(),True,True,0)
     self.listarea=listarea
     (button_new,button_remove,button_edit)=listarea.get_buttons()
     button_new.connect('clicked', self.on_click_new)
@@ -2354,52 +2362,194 @@ class AFMMainArea:
     listarea.get_buttonbox().pack_start(hbbox,False,False,0)
 
     hbbox.set_layout(Gtk.ButtonBoxStyle.END)
-    #button = Gtk.Button("Add a table")
     button = Gtk.Button.new_with_mnemonic("Add a table")
     button.connect('clicked', self.on_click_addtable)
     hbbox.add(button)
-
 
     hbbox = Gtk.HButtonBox() 
     listarea.get_vbox().pack_start(hbbox,False,False,0)
     hbbox.set_layout(Gtk.ButtonBoxStyle.END)
 
     hbbox.set_layout(Gtk.ButtonBoxStyle.END)
-    #button = Gtk.Button("Show Grids/Preview")
     button = Gtk.Button.new_with_mnemonic("Show Grids/Preview")
 
     button.connect('clicked', self.on_click_preview)
     hbbox.add(button)
     self.open_preview_button=button
     
-    #button = Gtk.Button(stock=Gtk.STOCK_SAVE_AS)
     button = Gtk.Button.new_from_icon_name("document-save-as",Gtk.IconSize.LARGE_TOOLBAR)
     button.connect('clicked', self.on_click_save_as)
     hbbox.add(button)
     hbbox.show_all()
-    self.box.show_all()
 
+
+  def get_initial_boxdata(self):
+    p=0
+    x1=0
+    x2=1
+    y1=2
+    y2=3
+    if self.preview != None:
+      p=self.preview.get_currentpage()
+
+    xx=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if not griddata.is_horizontal  if griddata.page==p]
+    if len(xx)>0:
+      xx.sort()
+      x1=xx[0][1]
+      x2=xx[-1][1]
+    else:
+      xx=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if not griddata.is_horizontal]
+      if len(xx)>0:
+        xx.sort()
+        x1=xx[0][1]
+        x2=xx[-1][1]
+    yy=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if  griddata.is_horizontal and griddata.page==p]
+    if len(yy)>0:
+      yy.sort()
+      y1=yy[0][1]
+      y2=yy[-1][1]
+    else:
+      yy=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if griddata.is_horizontal]
+      if len(yy)>0:
+        yy.sort()
+        y1=yy[0][1]
+        y2=yy[-1][1]
+    
+    return BoxData(p,x1,x2,y1,y2)
+  
+
+  def refresh_preview(self):
+      if self.preview:
+        self.preview.refresh_preview()
+
+  def is_valid_boxdata(self,boxdata):
+    if boxdata:
+      return True
+    else:
+      return True
+
+  def get_boxdata_by_dialog(self,boxdata,title,message):
+    dialog=BoxDataDialog(title,None,True,boxdata,message,self.projectdata)
+    dialog.add_buttons(Gtk.STOCK_CANCEL,
+                       Gtk.ResponseType.REJECT,
+                       Gtk.STOCK_OK,
+                       Gtk.ResponseType.ACCEPT)
+    r = dialog.run()
+    if r==Gtk.ResponseType.ACCEPT:
+      boxdata=dialog.get_boxdata()
+    else:
+      boxdata=None
+    dialog.destroy()
+    return boxdata
+
+  def get_valid_boxdata_by_dialog(self,boxdata,title,message):
+    boxdata=self.get_boxdata_by_dialog(boxdata,title,message)
+    while not self.is_valid_boxdata(boxdata):
+      boxdata=self.get_boxdata_by_dialog(boxdata,title,message)
+    return boxdata
+
+  def confirm_and_add(self,boxdata):
+    title="New box."
+    message="Add the following box:"
+    boxdata=self.get_valid_boxdata_by_dialog(boxdata,title,message)
+    if boxdata:
+      self.listarea.append_boxdata(boxdata)
+      self.projectdata.add_boxdata(boxdata)
+      self.refresh_preview()
+
+
+  def on_click_new(self,widget):
+    boxdata=self.get_initial_boxdata()
+    self.confirm_and_add(boxdata)
+
+  def confirm_and_remove_by_id(self,boxid,model,itera):
+    if not boxid:
+      return
+    boxdata=self.projectdata.get_boxdata_by_id(boxid)
+    title="Remove BOX."
+    message="Remove the following box:"
+    boxdata=self.get_valid_boxdata_by_dialog(boxdata,title,message)
+    if boxdata:
+      self.projectdata.pop_boxdata_by_id(boxid)
+      self.refresh_preview()
+      model.remove(itera)
+
+  def on_click_remove(self,widget):
+    (model,iteralist,boxids)=self.listarea.get_selected_ids()
+    if not boxids:
+      return
+    for (itera,boxid,) in zip(iteralist,boxids):
+      self.confirm_and_remove_by_id(boxid,model,itera)
+
+      
+  def on_click_edit(self,widget):
+    (model,iteralist,boxids)=self.listarea.get_selected_ids()
+    if not boxids:
+      return
+    for (itera,boxid) in zip(iteralist,boxids):
+      if not boxid:
+        return
+      boxdata=self.projectdata.get_boxdata_by_id(boxid)
+      title="BOX id "+boxid
+      message="Edit the following box:"
+      boxdata=self.get_valid_boxdata_by_dialog(boxdata,title,message)
+      if boxdata:
+        self.projectdata.pop_boxdata_by_id(boxid)
+        self.projectdata.add_boxdata(boxdata)
+        self.refresh_preview()
+
+        model.remove(itera)
+        self.listarea.append_boxdata(boxdata)
+
+  def get_tabledata_by_dialog(self,title,message,current_page):
+    dialog=TableDataDialog(title,None,True,message,self.projectdata,current_page)
+    dialog.add_buttons(Gtk.STOCK_CANCEL,
+                       Gtk.ResponseType.REJECT,
+                       Gtk.STOCK_OK,
+                       Gtk.ResponseType.ACCEPT)
+    r = dialog.run()
+    if r==Gtk.ResponseType.ACCEPT:
+      tabledata=dialog.get_tabledata()
+    else:
+      tabledata=None
+    dialog.destroy()
+    return tabledata
+
+  def confirm_and_addtable(self):
+    title="New Table."
+    message="Add boxes:"
+    p=0
+    if self.preview != None:
+      p=self.preview.get_currentpage()
+    t=self.get_tabledata_by_dialog(title,message,p)
+    if t:
+      (boxes,tabledata)=t
+      for row in boxes:
+        for boxdata in row:
+          self.listarea.append_boxdata(boxdata)
+          self.projectdata.add_boxdata(boxdata)
+      self.projectdata.add_tabledata(tabledata)
+      self.refresh_preview()
+        
+  def on_click_addtable(self,widget):
+    self.confirm_and_addtable()
+
+  def on_delete_preview_dialog(self,widget,event,data=None):
+    self.preview=None
+    self.open_preview_button.set_sensitive(True)
+    return False
+  
   def open_preview_dialog(self):
     dialog=HoganDialog("Preview",None,True,self.projectdata,0)
     dialog.connect("delete_event", self.on_delete_preview_dialog)
     dialog.show()
     self.preview=dialog
   
-  def on_delete_preview_dialog(self,widget,event,data=None):
-    self.preview=None
-    self.open_preview_button.set_sensitive(True)
-    return False
-  
-
-  def get_box(self):
-    return self.box
-
   def on_click_preview(self,widget):
     self.open_preview_button.set_sensitive(False)
     if self.preview == None:
       self.open_preview_dialog()
 
-  
   def on_click_save_as(self,widget):
     dialog = Gtk.FileChooserDialog(title='Select zip file to save.',
                                    parent=None,
@@ -2435,171 +2585,11 @@ class AFMMainArea:
     rootdir=os.path.splitext(os.path.basename(destzipfilename))[0]
     destzip=zipfile.ZipFile(destzipfilename,'w')
     self.projectdata.output_to_zipfile(destzip,rootdir)
-    #Gtk.main_quit()
 
-  def refresh_preview(self):
-      if self.preview:
-        self.preview.refresh_preview()
-        
-  def get_initial_boxdata(self):
-    p=0
-    x1=0
-    x2=1
-    y1=2
-    y2=3
-    if self.preview != None:
-      p=self.preview.get_currentpage()
-
-    xx=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if not griddata.is_horizontal  if griddata.page==p]
-    if len(xx)>0:
-      xx.sort()
-      x1=xx[0][1]
-      x2=xx[-1][1]
-    else:
-      xx=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if not griddata.is_horizontal]
-      if len(xx)>0:
-        xx.sort()
-        x1=xx[0][1]
-        x2=xx[-1][1]
-    yy=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if  griddata.is_horizontal and griddata.page==p]
-    if len(yy)>0:
-      yy.sort()
-      y1=yy[0][1]
-      y2=yy[-1][1]
-    else:
-      yy=[(griddata.value,griddata.id) for griddata in self.projectdata.grids if griddata.is_horizontal]
-      if len(yy)>0:
-        yy.sort()
-        y1=yy[0][1]
-        y2=yy[-1][1]
-    
-    return BoxData(p,x1,x2,y1,y2)
-  
-  def on_click_addtable(self,widget):
-    self.confirm_and_addtable()
-    
-  def confirm_and_addtable(self):
-    title="New Table."
-    message="Add boxes:"
-    p=0
-    if self.preview != None:
-      p=self.preview.get_currentpage()
-    t=self.get_tabledata_by_dialog(title,message,p)
-    if t:
-      (boxes,tabledata)=t
-      for row in boxes:
-        for boxdata in row:
-          self.listarea.append_boxdata(boxdata)
-          self.projectdata.add_boxdata(boxdata)
-      self.projectdata.add_tabledata(tabledata)
-      self.refresh_preview()
 
   
-  def on_click_new(self,widget):
-    boxdata=self.get_initial_boxdata()
-    self.confirm_and_add(boxdata)
 
-  def confirm_and_add(self,boxdata):
-    title="New box."
-    message="Add the following box:"
-    boxdata=self.get_valid_boxdata_by_dialog(boxdata,title,message)
-    if boxdata:
-      self.listarea.append_boxdata(boxdata)
-      self.projectdata.add_boxdata(boxdata)
-      self.refresh_preview()
 
-  def on_click_remove(self,widget):
-    (model,iteralist,boxids)=self.listarea.get_selected_ids()
-    if not boxids:
-      return
-    for (itera,boxid,) in zip(iteralist,boxids):
-      self.confirm_and_remove_by_id(boxid,model,itera)
-
-  def confirm_and_remove_by_id(self,boxid,model,itera):
-    if not boxid:
-      return
-    boxdata=self.projectdata.get_boxdata_by_id(boxid)
-    title="Remove BOX."
-    message="Remove the following box:"
-    boxdata=self.get_valid_boxdata_by_dialog(boxdata,title,message)
-    if boxdata:
-      self.projectdata.pop_boxdata_by_id(boxid)
-      self.refresh_preview()
-      model.remove(itera)
-
-  def on_click_edit(self,widget):
-    (model,iteralist,boxids)=self.listarea.get_selected_ids()
-    if not boxids:
-      return
-    for (itera,boxid) in zip(iteralist,boxids):
-      if not boxid:
-        return
-      boxdata=self.projectdata.get_boxdata_by_id(boxid)
-      title="BOX id "+boxid
-      message="Edit the following box:"
-      boxdata=self.get_valid_boxdata_by_dialog(boxdata,title,message)
-      if boxdata:
-        self.projectdata.pop_boxdata_by_id(boxid)
-        self.projectdata.add_boxdata(boxdata)
-        self.refresh_preview()
-
-        model.remove(itera)
-        self.listarea.append_boxdata(boxdata)
-
-  def get_tabledata_by_dialog(self,title,message,current_page):
-    dialog=TableDataDialog(title,None,True,message,self.projectdata,current_page)
-    dialog.add_buttons(Gtk.STOCK_CANCEL,
-                       Gtk.ResponseType.REJECT,
-                       Gtk.STOCK_OK,
-                       Gtk.ResponseType.ACCEPT)
-    r = dialog.run()
-    if r==Gtk.ResponseType.ACCEPT:
-      tabledata=dialog.get_tabledata()
-    else:
-      tabledata=None
-    dialog.destroy()
-    return tabledata
-
-  def get_boxdata_by_dialog(self,boxdata,title,message):
-    dialog=BoxDataDialog(title,None,True,boxdata,message,self.projectdata)
-    dialog.add_buttons(Gtk.STOCK_CANCEL,
-                       Gtk.ResponseType.REJECT,
-                       Gtk.STOCK_OK,
-                       Gtk.ResponseType.ACCEPT)
-    r = dialog.run()
-    if r==Gtk.ResponseType.ACCEPT:
-      boxdata=dialog.get_boxdata()
-    else:
-      boxdata=None
-    dialog.destroy()
-    return boxdata
-
-  def get_valid_boxdata_by_dialog(self,boxdata,title,message):
-    boxdata=self.get_boxdata_by_dialog(boxdata,title,message)
-    while not self.is_valid_boxdata(boxdata):
-      boxdata=self.get_boxdata_by_dialog(boxdata,title,message)
-    return boxdata
-
-  def is_valid_boxdata(self,boxdata):
-    if boxdata:
-      return True
-    else:
-      return True
-###
-
-class AFMMainWindow(Gtk.ApplicationWindow):
-  def __init__(self, uri, *args, **kwargs):
-    super().__init__(*args, **kwargs)
-    self.projectdata=ProjectData(uri)
-    self.build_ui()
-    self.set_default_size(360, 300)
-    self.show()
-        
-  def build_ui(self):
-    layout = AFMMainArea(self.projectdata)
-    self.add(layout.get_box())
-
-  
 class AFMApplication(Gtk.Application):
   def __init__(self,*args, **kwargs):
     super().__init__(*args, **kwargs)
