@@ -2392,7 +2392,7 @@ class AFMMainWindow(Gtk.ApplicationWindow):
 
   def connect_menu_actions(self):
     action = Gio.SimpleAction.new("saveas", None)
-    action.connect("activate", self.on_click_save_as)
+    action.connect("activate", lambda widget,parm:self.save_as())
     self.add_action(action)
 
     action = Gio.SimpleAction.new_stateful("toggle_preview", None, GLib.Variant.new_boolean(False))
@@ -2438,26 +2438,10 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     hbbox.add(button)
     
     button = Gtk.Button.new_from_icon_name("document-save-as",Gtk.IconSize.LARGE_TOOLBAR)
-    button.connect('clicked', self.on_click_save_as)
+    button.connect('clicked', lambda widget:self.save_as())
     hbbox.add(button)
     hbbox.show_all()
 
-  def toggle_preview_dialog(self):
-    self.toggle_preview_button.handler_block(self.toggle_preview_button_handler_id)
-    if self.preview:
-      self.preview.destroy()
-      self.preview=None
-
-      self.toggle_preview_button.set_active(False)
-      self.toggle_preview_action.set_state(GLib.Variant.new_boolean(False))
-    else:
-      self.toggle_preview_button.set_active(True)
-      self.toggle_preview_action.set_state(GLib.Variant.new_boolean(True))
-      dialog=HoganDialog("Preview",None,True,self.projectdata,0)
-      dialog.connect("delete_event", lambda widget,event:self.toggle_preview_dialog())
-      dialog.show()
-      self.preview=dialog
-    self.toggle_preview_button.handler_unblock(self.toggle_preview_button_handler_id)
 
   def refresh_preview(self):
       if self.preview:
@@ -2576,13 +2560,11 @@ class AFMMainWindow(Gtk.ApplicationWindow):
         
   def on_click_addtable(self,widget):
     self.confirm_and_addtable()
-
-
-
       
-  def on_click_save_as(self,widget,param=None):
+  #############################################################
+  def save_as(self):
     dialog = Gtk.FileChooserDialog(title='Select zip file to save.',
-                                   parent=None,
+                                   parent=self,
                                    action=Gtk.FileChooserAction.SAVE)
     dialog.add_buttons(Gtk.STOCK_CANCEL,
                        Gtk.ResponseType.REJECT,
@@ -2616,8 +2598,23 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     destzip=zipfile.ZipFile(destzipfilename,'w')
     self.projectdata.output_to_zipfile(destzip,rootdir)
 
+  def toggle_preview_dialog(self):
+    self.toggle_preview_button.handler_block(self.toggle_preview_button_handler_id)
+    if self.preview:
+      self.preview.destroy()
+      self.preview=None
 
-  
+      self.toggle_preview_button.set_active(False)
+      self.toggle_preview_action.set_state(GLib.Variant.new_boolean(False))
+    else:
+      self.toggle_preview_button.set_active(True)
+      self.toggle_preview_action.set_state(GLib.Variant.new_boolean(True))
+      dialog=HoganDialog("Preview",None,True,self.projectdata,0)
+      dialog.connect("delete_event", lambda widget,event:self.toggle_preview_dialog())
+      dialog.show()
+      self.preview=dialog
+    self.toggle_preview_button.handler_unblock(self.toggle_preview_button_handler_id)
+
 
 
 class AFMApplication(Gtk.Application):
