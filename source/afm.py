@@ -2425,11 +2425,14 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     hbbox.set_layout(Gtk.ButtonBoxStyle.END)
 
     hbbox.set_layout(Gtk.ButtonBoxStyle.END)
-    button = Gtk.Button.new_with_mnemonic("Show Grids/Preview")
-
-    button.connect('clicked', self.on_click_preview)
+    #button = Gtk.Button.new_with_mnemonic("Show Grids/Preview")
+    #button.connect('clicked', self.on_click_preview)
+    button = Gtk.ToggleButton.new_with_mnemonic("Show Grids/Preview")
+    self.toggle_preview_button_handler_id=button.connect("toggled",self.on_click_preview)
+    self.toggle_preview_button=button
+  
+    
     hbbox.add(button)
-    self.open_preview_button=button
     
     button = Gtk.Button.new_from_icon_name("document-save-as",Gtk.IconSize.LARGE_TOOLBAR)
     button.connect('clicked', self.on_click_save_as)
@@ -2557,18 +2560,21 @@ class AFMMainWindow(Gtk.ApplicationWindow):
 
 
   def toggle_preview_dialog(self):
+    self.toggle_preview_button.handler_block(self.toggle_preview_button_handler_id)
     if self.preview:
       self.preview.destroy()
       self.preview=None
-      self.open_preview_button.set_sensitive(True)
+
+      self.toggle_preview_button.set_active(False)
       self.toggle_preview_action.set_state(GLib.Variant.new_boolean(False))
     else:
-      self.open_preview_button.set_sensitive(False)
+      self.toggle_preview_button.set_active(True)
       self.toggle_preview_action.set_state(GLib.Variant.new_boolean(True))
       dialog=HoganDialog("Preview",None,True,self.projectdata,0)
       dialog.connect("delete_event", self.on_delete_preview_dialog)
       dialog.show()
       self.preview=dialog
+    self.toggle_preview_button.handler_unblock(self.toggle_preview_button_handler_id)
 
   def on_delete_preview_dialog(self,widget,event,data=None):
     self.toggle_preview_dialog()
