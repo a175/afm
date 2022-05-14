@@ -1919,8 +1919,9 @@ class TableDataDialog(Gtk.Dialog):
     return self.area.get_tabledata()
 
 class HoganDialog(Gtk.Dialog):
-  def __init__(self,title=None, parent=None,destroy_with_parent=True, projectdata=None,p=0):
+  def __init__(self,title=None, parent=None,destroy_with_parent=True, projectdatabib=None,p=0):
     Gtk.Dialog.__init__(self,title=title,parent=parent,destroy_with_parent=destroy_with_parent)
+    projectdata=projectdatabin.document_data
     self.area=LayoutOverBoxesWithHoganArea(projectdata,p)
     self.vbox.pack_start(self.area.get_box(),True,True,0)
     (w,h)=projectdata.get_default_dialog_size()
@@ -2218,10 +2219,9 @@ class ProjectData:
       
     else:
       self.lwidth = self.WIDTH
-      self.lheight = self.HEIGHT
+      self.lheight  self.HEIGHT
     self.set_default_dialog_size((self.lwidth,self.lheight))
-
-    
+  
   def get_pages_with_boxdata(self):
     pages=list(set([boxdata.page for boxdata in self.boxes]))
     pages.sort()
@@ -2376,7 +2376,7 @@ class ProjectData:
         yy.sort()
         y1=yy[0][1]
         y2=yy[-1][1]
-    
+
     return BoxData(p,x1,x2,y1,y2)
 
 class ProjectApplicationData:
@@ -2646,7 +2646,7 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     else:
       self.toggle_preview_button.set_active(True)
       self.toggle_preview_action.set_state(GLib.Variant.new_boolean(True))
-      dialog=HoganDialog("Preview",None,True,self.projectdata,0)
+      dialog=HoganDialog("Preview",None,True,self.projectdatabin,0)
       dialog.connect("delete_event", lambda widget,event:self.toggle_preview_dialog())
       dialog.show()
       self.preview=dialog
