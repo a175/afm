@@ -2128,34 +2128,41 @@ class ProjectData:
   DEFAULT_JSON_BASE="projectdata"
   DEFAULT_JSON_EXT=".json"
   DEFAULT_MAKEFILE_PATH="Makefile"
-
-  def __init__(self,uri):
+  
+  @classmethod
+  def new_from_json(cls,uri):
     p=urllib.parse.urlparse(uri)
     path=urllib.parse.unquote(p.path)
-    (self.destdir,filename)=os.path.split(path)
-    (base,ext)=os.path.splitext(filename)
+    (destdir,filename)=os.path.split(path)
+    f = open(path)
+    prev_proj= json.load(f)
+    bgimagepath=prev_proj["bgimagepath"]
+    bgimagefullpath=os.path.join(destdir,bgimagepath)
+    prev_proj["pdfuri"]='file://'+urllib.request.pathname2url(bgimagefullpath)
+    return ProjectData(prev_proj,bgimagepath,bgimagefullpath)
 
-    self.project_application_data=ProjectApplicationData()
-    
-    if ext==self.DEFAULT_JSON_EXT:
-      f = open(path)
-      prev_proj= json.load(f)
-      self.bgimagepath=prev_proj["bgimagepath"]
-      self.bgimagefullpath=os.path.join(self.destdir,self.bgimagepath)
-      prev_proj["pdfuri"]='file://'+urllib.request.pathname2url(self.bgimagefullpath)
-      self.destdir=os.path.join(self.destdir,"..")
-    else:
-      self.bgimagefullpath=path
-      self.bgimagepath=filename
-      prev_proj={}
-      prev_proj["pdfuri"]=uri
+  @classmethod
+  def new_from_pdf(cls,uri):
+    p=urllib.parse.urlparse(uri)
+    path=urllib.parse.unquote(p.path)
+    (destdir,filename)=os.path.split(path)
+    (base,ext)=os.path.splitext(filename)
+    bgimagefullpath=path
+    bgimagepath=filename
+    prev_proj={}
+    prev_proj["pdfuri"]=uri
+    prev_proj["stylename"]=base
+    return ProjectData(prev_proj,bgimagepath,bgimagefullpath)
+
+  def __init__(self,prev_proj,bgimagepath,bgimagefullpath):
+    self.bgimagepath=bgimagepath
+    self.bgimagefullpath=bgimagefullpath
+
     self.set_document(prev_proj["pdfuri"])
-    
-    
     if "stylename" in prev_proj:
       self.stylename=prev_proj["stylename"]
     else:
-      self.stylename=base
+      self.stylename=None
     if "localcommandsuffix" in prev_proj:
       self.localcommandsuffix=prev_proj["localcommandsuffix"]
     else:
@@ -2381,7 +2388,13 @@ class ProjectApplicationData:
 
 class ProjectMetaData:
   def __init__(self,uri):
-    self.uri=uri
+    p=urllib.parse.urlparse(uri)
+    path=urllib.parse.unquote(p.path)
+    (dirname,filename)=os.path.split(path)
+    self.current_directory=dirname
+
+  def get_current_dirctory(self):
+    return self.current_directory
   
 class ProjectDataBin:
   def __init__(self,meta_data,document_data,application_data):
@@ -2391,7 +2404,14 @@ class ProjectDataBin:
 
   @classmethod
   def new_from_uri(cls,uri):
-    document_data=ProjectData(uri)
+    p=urllib.parse.urlparse(uri)
+    path=urllib.parse.unquote(p.path)
+    (destdir,filename)=os.path.split(path)
+    (base,ext)=os.path.splitext(filename)
+    if ext==".json":
+      document_data=ProjectData.new_from_json(uri)
+    else:
+      document_data=ProjectData.new_from_pdf(uri)
     meta_data=ProjectMetaData(uri)
     application_data=ProjectApplicationData()
     return ProjectDataBin(meta_data,document_data,application_data)
@@ -2587,7 +2607,7 @@ class AFMMainWindow(Gtk.ApplicationWindow):
                        Gtk.ResponseType.REJECT,
                        Gtk.STOCK_SAVE,
                        Gtk.ResponseType.ACCEPT)
-    dialog.set_current_folder(self.projectdata.destdir)
+    dialog.set_current_folder(self.projectdatabin.meta_data.get_current_dirctory())
     dialog.set_current_name(self.projectdata.stylename+'-stylefile.zip')
 
     dialog.set_do_overwrite_confirmation(True)
