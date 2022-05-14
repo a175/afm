@@ -2121,13 +2121,6 @@ class LayoutOverBoxesWithHoganArea:
     return self.layout.page
 
 
-class ProjectApplicationData:
-  def __init__(self):
-    self.current_page=0
-
-  def set_current_page(self,p):
-    self.current_page=p
-
 class ProjectData:
   HEIGHT = 600
   WIDTH = 600
@@ -2379,11 +2372,35 @@ class ProjectData:
     
     return BoxData(p,x1,x2,y1,y2)
 
+class ProjectApplicationData:
+  def __init__(self):
+    self.current_page=0
+
+  def set_current_page(self,p):
+    self.current_page=p
+
+class ProjectMetaData:
+  def __init__(self,uri):
+    self.uri=uri
+  
+class ProjectDataBin:
+  def __init__(self,meta_data,document_data,application_data):
+    self.application_data=application_data
+    self.document_data=document_data
+    self.meta_data=meta_data
+
+  @classmethod
+  def new_from_uri(cls,uri):
+    document_data=ProjectData(uri)
+    meta_data=ProjectMetaData(uri)
+    application_data=ProjectApplicationData()
+    return ProjectDataBin(meta_data,document_data,application_data)
 
 class AFMMainWindow(Gtk.ApplicationWindow):
   def __init__(self, uri, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    self.projectdata=ProjectData(uri)
+    self.projectdatabin=ProjectDataBin.new_from_uri(uri)
+    self.projectdata=self.projectdatabin.document_data
     self.preview=None    
     self.build_ui()
     self.connect_menu_actions()
