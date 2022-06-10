@@ -2219,7 +2219,7 @@ class ProjectData:
       
     else:
       self.lwidth = self.WIDTH
-      self.lheight  self.HEIGHT
+      self.lheight = self.HEIGHT
     self.set_default_dialog_size((self.lwidth,self.lheight))
   
   def get_pages_with_boxdata(self):
