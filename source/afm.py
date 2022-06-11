@@ -1919,7 +1919,7 @@ class TableDataDialog(Gtk.Dialog):
     return self.area.get_tabledata()
 
 class HoganDialog(Gtk.Dialog):
-  def __init__(self,title=None, parent=None,destroy_with_parent=True, projectdatabib=None,p=0):
+  def __init__(self,title=None, parent=None,destroy_with_parent=True, projectdatabin=None,p=0):
     Gtk.Dialog.__init__(self,title=title,parent=parent,destroy_with_parent=destroy_with_parent)
     projectdata=projectdatabin.document_data
     self.area=LayoutOverBoxesWithHoganArea(projectdata,p)
