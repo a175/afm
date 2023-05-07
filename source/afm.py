@@ -1322,7 +1322,7 @@ class LayoutOverBoxes(Gtk.Layout):
       
       (r,g,b,a)=(0.3, 0.3, 0.6,1.0)
       ctx.set_source_rgba(r,g,b,a)
-      ctx.select_font_face('Serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+      #ctx.select_font_face('Serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
       ctx.set_font_size(12)
       ctx.move_to(x1, y2)
       ctx.show_text(box.id)
@@ -1919,7 +1919,7 @@ class TableDataDialog(Gtk.Dialog):
     return self.area.get_tabledata()
 
 class HoganDialog(Gtk.Dialog):
-  def __init__(self,title=None, parent=None,destroy_with_parent=True, projectdatabib=None,p=0):
+  def __init__(self,title=None, parent=None,destroy_with_parent=True, projectdatabin=None,p=0):
     Gtk.Dialog.__init__(self,title=title,parent=parent,destroy_with_parent=destroy_with_parent)
     projectdata=projectdatabin.document_data
     self.area=LayoutOverBoxesWithHoganArea(projectdata,p)
