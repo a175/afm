@@ -1322,7 +1322,7 @@ class LayoutOverBoxes(Gtk.Layout):
       
       (r,g,b,a)=(0.3, 0.3, 0.6,1.0)
       ctx.set_source_rgba(r,g,b,a)
-      ctx.select_font_face('Serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+      #ctx.select_font_face('Serif', cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
       ctx.set_font_size(12)
       ctx.move_to(x1, y2)
       ctx.show_text(box.id)
