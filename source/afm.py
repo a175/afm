@@ -2293,7 +2293,12 @@ class ProjectData:
     return (x1,x2,width,y1,y2,height)
 
 
-  def output_to_zipfile(self,destzip,rootdir):
+  def output_to_zipfile(self,destzip,rootdir,required_sty_filenames):
+    for (filepath,filename) in required_sty_filenames:
+      print_log("writing required stylefile...."+filename)
+      arcname=os.path.join(rootdir,filename)
+      destzip.write(filepath,arcname=arcname)
+
     print_log("writing imagefiles....")
     afd=applicationFormData(self)
     afd.create_bgimage_file(self.bgimagefullpath,destzip,rootdir)
@@ -2417,8 +2422,9 @@ class ProjectDataBin:
     return ProjectDataBin(meta_data,document_data,application_data)
 
 class AFMMainWindow(Gtk.ApplicationWindow):
-  def __init__(self, uri, *args, **kwargs):
+  def __init__(self, uri,required_sty_filenames, *args, **kwargs):
     super().__init__(*args, **kwargs)
+    self.required_sty_filenames=required_sty_filenames[:]
     self.projectdatabin=ProjectDataBin.new_from_uri(uri)
     self.projectdata=self.projectdatabin.document_data
     self.preview=None    
@@ -2426,6 +2432,7 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     self.connect_menu_actions()
     self.set_default_size(360, 300)
     self.show_all()
+    
 
   def connect_menu_actions(self):
     action = Gio.SimpleAction.new("saveas", None)
@@ -2633,7 +2640,7 @@ class AFMMainWindow(Gtk.ApplicationWindow):
     print_log('creating '+destzipfilename+'.')
     rootdir=os.path.splitext(os.path.basename(destzipfilename))[0]
     destzip=zipfile.ZipFile(destzipfilename,'w')
-    self.projectdata.output_to_zipfile(destzip,rootdir)
+    self.projectdata.output_to_zipfile(destzip,rootdir,self.required_sty_filenames)
 
   def toggle_preview_dialog(self):
     self.toggle_preview_button.handler_block(self.toggle_preview_button_handler_id)
@@ -2665,7 +2672,10 @@ class AFMApplication(Gtk.Application):
     self.APP_URL="https://github.com/a175/afm/"
     self.APP_LOGO_FILE=None
     #self.APP_LOGO_FILE="./icon.png"
-    self.MENUBAR_XML_FILENAME =  "./afm_ui.xml"
+    self.MENUBAR_XML_FILENAME =  os.path.join(os.path.dirname(__file__),"./afm_ui.xml")
+    rs="./documentonform.sty"
+    self.REQUIRED_STY_FILENAMES = [(os.path.join(os.path.dirname(__file__),rs),rs)]
+
 
 
 
@@ -2673,6 +2683,7 @@ class AFMApplication(Gtk.Application):
   def do_startup(self):
     Gtk.Application.do_startup(self)
     self.build_menubar()
+
   def do_activate(self):
     self.select_file_and_open_as_new()
 
@@ -2680,7 +2691,7 @@ class AFMApplication(Gtk.Application):
     for gfile in files:
       print(gfile.get_path(),gfile.get_uri())
       uri=gfile.get_uri()
-    window=AFMMainWindow(uri,application=self)
+    window=AFMMainWindow(uri,self.REQUIRED_STY_FILENAMES,application=self)
     window.present()
 
   def select_file_and_open_as_new(self):
