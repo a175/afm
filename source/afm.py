@@ -1289,6 +1289,33 @@ class LayoutOverBoxes(Gtk.Layout):
     self.message='test text'
     self.width = self.height = 0
     self.connect('size-allocate', self.on_self_size_allocate)
+    #self.connect('draw', self.on_self_expose_event)
+    self.projectdata=projectdata
+    self.page=0
+    self.pdfImageWithBoxes=PDFImageWithBoxes(projectdata)
+    self.add(self.pdfImageWithBoxes)
+    self.pdfImageWithBoxes.set_visible(True)
+    
+
+    
+    
+  def refresh_preview(self):
+    if self.get_window():
+      self.get_window().invalidate_rect(self.get_allocation(),True) 
+
+  def set_page(self,page):
+    self.pdfImageWithBoxes.set_page(page)
+    
+  def on_self_size_allocate(self, widget, allocation):
+    self.width = allocation.width
+    self.height = allocation.height
+    #self.pdfImageWithBoxes.set_size_request(self.width,self.height)
+
+class PDFImageWithBoxes(Gtk.DrawingArea):
+  def __init__(self,projectdata):
+    Gtk.DrawingArea.__init__(self)
+    self.width = self.height = 0
+    self.connect('size-allocate', self.on_self_size_allocate)
     self.connect('draw', self.on_self_expose_event)
     self.projectdata=projectdata
     self.page=0
@@ -1303,9 +1330,9 @@ class LayoutOverBoxes(Gtk.Layout):
       self.page=page % n
     else:
       self.page=page
+    (w,h)=self.projectdata.document.get_size_of_page(page)
+    self.set_size_request(w,h)
     self.refresh_preview()
-
-
     
   def on_self_size_allocate(self, widget, allocation):
     self.width = allocation.width
@@ -1509,7 +1536,6 @@ class LayoutOverBoxes(Gtk.Layout):
       w=int(width*2/3)
       d=-int(width/10)
       dy=int(height/6)
-
 
 
 class Bar(Gtk.DrawingArea):
