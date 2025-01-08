@@ -14,4 +14,8 @@ But we may modify it directly (rename the commands, add some user frontend comma
 [sample/sample-form-stylefile-modified.zip](https://github.com/a175/afm/blob/master/sample/sample-form-stylefile-modified.zip).
 
 
+If use Poppler in debian, then install poppler by
+`apt-get install gir1.2-poppler-0.18`.
+
+
 
